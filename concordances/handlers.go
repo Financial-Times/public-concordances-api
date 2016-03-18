@@ -8,6 +8,7 @@ import (
 
 	"errors"
 	"github.com/Financial-Times/go-fthealth/v1a"
+	"github.com/Financial-Times/service-status-go/gtg"
 	log "github.com/Sirupsen/logrus"
 	"strings"
 )
@@ -35,6 +36,15 @@ func Checker() (string, error) {
 		return "Connectivity to neo4j is ok", err
 	}
 	return "Error connecting to neo4j", err
+}
+
+// G2GChecker simply calls the Neo4J checker and returns it as a gtg.Status
+func G2GChecker() gtg.Status {
+	msg, err := Checker()
+	if err == nil {
+		return gtg.Status{GoodToGo: true}
+	}
+	return gtg.Status{GoodToGo: false, Message: msg}
 }
 
 // Ping says pong

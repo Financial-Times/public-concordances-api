@@ -97,7 +97,8 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	http.HandleFunc(status.PingPathDW, status.PingHandler)
 	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
-	http.HandleFunc("/__gtg", concordances.GoodToGo)
+	g2g := status.NewGoodToGoHandler(concordances.G2GChecker())
+	http.HandleFunc(status.GTGPath, g2g.GoodToGoHandler)
 	http.Handle("/", monitoringRouter)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
