@@ -104,16 +104,10 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	concordance, found, err := processParams(conceptIDExist, authorityExist, m)
+	concordance, _, err := processParams(conceptIDExist, authorityExist, m)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
-		return
-	}
-
-	if !found {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"message":"` + concordanceNotFound + `"}`))
 		return
 	}
 
