@@ -21,7 +21,7 @@ func HealthCheck() v1a.Check {
 	return v1a.Check{
 		BusinessImpact:   "Unable to respond to Public Concordances api requests",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
-		PanicGuide:       "https://sites.google.com/a/ft.com/ft-technology-service-transition/home/run-book-library/concordance-read-api",
+		PanicGuide:       "https://sites.google.com/a/ft.com/ft-technology-service-transition/home/run-book-library/public-concordances-api",
 		Severity:         1,
 		TechnicalSummary: "Cannot connect to Neo4j a instance with at least one concordance loaded in it",
 		Checker:          Checker,
