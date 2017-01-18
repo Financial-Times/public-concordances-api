@@ -9,6 +9,7 @@ import (
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/public-concordances-api/concordances"
+	"github.com/Financial-Times/service-status-go/gtg"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 
 	"fmt"
@@ -123,7 +124,8 @@ func runServer(neoURL string, port string, cacheDuration string, env string) {
 	http.HandleFunc(status.PingPathDW, status.PingHandler)
 	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
-	http.HandleFunc("/__gtg", concordances.GoodToGo)
+	g2ghandler := status.NewGoodToGoHandler(gtg.StatusChecker(concordances.G2GChecker))
+	http.HandleFunc(status.GTGPath, g2ghandler)
 	http.Handle("/", monitoringRouter)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
