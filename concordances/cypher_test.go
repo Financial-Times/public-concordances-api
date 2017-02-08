@@ -142,6 +142,7 @@ func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, asse
 
 func deleteAllViaService(assert *assert.Assertions, peopleRW baseftrwapp.Service, organisationRW baseftrwapp.Service) {
 	peopleRW.Delete("868c3c17-611c-4943-9499-600ccded71f3")
+	peopleRW.Delete("ea56ae1d-5241-413d-827d-11aa90f983f8")
 	organisationRW.Delete("f21a5cc0-d326-4e62-b84a-d840c2209fee")
 }
 
