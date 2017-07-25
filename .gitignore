@@ -7,6 +7,6 @@ Compiled source #
 # Logs and databases #
 ######################
 *.log
-public-concordances-api
+/public-concordances-api
 
 vendor/*/
