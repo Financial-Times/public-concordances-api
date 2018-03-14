@@ -48,11 +48,43 @@ Alternatively, use socks proxy to forward to tunnel url via ssh and hit a cluste
 
 ## API Endpoints
 Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/1onyyb-XoByB00RQNZvjNoL_IsO_eHKe-vOpUuAVHyJE)
+#### GET:
 
     - `GET /concordances?conceptId={thingUri}` - Returns a list of all identifiers for given concept
     - `GET /concordances?conceptId={thingUri}&conceptId={thingUri}...` - Returns a list of all identifiers for each concept provided   
     - `GET /concordances?authority={identifierUri}&identifierValue{identifierValue}` - Returns the apiUrl that matches the corresponding identifier 
     - `GET /concordances?authority={identifierUri}&idenifierValue={identifierValue}&idenifierValue={identifierValue}...` -Returns a list of all apiUrl's for the corresponding identifiers
+#### POST:
+#####1.POST with only one "conceptId"
+    
+    {  
+	"conceptId": "http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", 
+    }
+ 
+##### 2.POST with many conceptIds
+    {
+	   "conceptId": [
+			"http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e", 
+			"http://api.ft.com/things/9441e9aa-b77b-b726-2191-6ef63f6c2a45",
+	    ]
+    }
+
+#####3.POST with "authority" and an "identifierValue"
+    {   
+	"authority": "http://api.ft.com/system/FT-TME",
+	"identifierValue": "MzJmYWJlNDAtOWY4NS00ZWMzLTg2OTItZjMxODdiY2RiNzYz-UE4=" 
+    }
+
+#####4.POST with "authority" and many "identifierValue"
+    {   
+	"authority": "http://api.ft.com/system/FT-TME",
+	"identifierValue": [	
+		    "MzJmYWJlNDAtOWY4NS00ZWMzLTg2OTItZjMxODdiY2RiNzYz-UE4="
+        "MzJmYWJlNDAtOWY4NS00fsoagdhohaaghagxODdiY2RiNzYz-UE4="	
+        "MzJmYWJlNDAtOW2r5gkssjlzLTg2OTItZjMxODdiY2RiNzYz-UE4="
+	    ]
+    }   
+
 
 ## Admin endpoints (CoCo) 
 

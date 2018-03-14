@@ -13,6 +13,7 @@ import (
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	"github.com/Financial-Times/service-status-go/gtg"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 )
 
 // ConcordanceDriver for cypher queries
@@ -69,22 +70,22 @@ func GTG() gtg.Status {
 
 // GetConcordances is the public API
 func GetConcordances(w http.ResponseWriter, r *http.Request) {
-
 	log.Debugf("Concordance request: %s", r.URL.RawQuery)
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 
-	_, conceptIDExist := m["conceptId"]
-	_, authorityExist := m["authority"]
+	conceptID := m["conceptId"]
+	authority := m.Get("authority")
+	identifierValue := m["identifierValue"]
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if conceptIDExist && authorityExist {
+	if len(conceptID) != 0 && authority != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
 			`{"message": "` + conceptAndAuthorityCannotBeBothPresent + `"}`))
 		return
 	}
 
-	if !conceptIDExist && !authorityExist {
+	if len(conceptID) == 0 && authority == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(
 			`{"message": "` + authorityIsMandatoryIfConceptIdIsMissing + `"}`))
@@ -98,7 +99,7 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	concordance, _, err := processParams(conceptIDExist, authorityExist, m)
+	concordance, _, err := processParams(conceptID, authority, identifierValue)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
@@ -112,23 +113,76 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(concordance)
 }
 
-func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
-	if conceptIDExist {
+// PostConcordances is the public API
+func PostConcordances(w http.ResponseWriter, r *http.Request){
+	log.Debugf("Concordance request: %s", r.Body)
+
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "` + invalidBody + `"}`))
+		return
+	}
+
+	ai := authorityAndConcepts{}
+	err = json.Unmarshal(body, &ai)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "` + connotUnmarshallJSON + `"}`))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if ai.Authority == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "` + authorityIsEmpty + `"}`))
+		return
+	}
+
+	if len(ai.IdentifierValue) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(
+			`{"message": "` + identifierValuesIsMissing + `"}`))
+		return
+	}
+
+	concordance, _, err := processParams(ai.ConceptID, ai.Authority, ai.IdentifierValue)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		return
+	}
+
+	Jason, _ := json.Marshal(concordance)
+	log.Debugf("Concordance(uuid:%s): %s\n", Jason)
+	w.Header().Set("Cache-Control", CacheControlHeader)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(concordance)
+}
+
+func processParams(conceptID []string, authority string, identifierValue []string) (concordances Concordances, found bool, err error) {
+	if len(conceptID)!=0 {
 		conceptUuids := []string{}
 
-		for _, uri := range m["conceptId"] {
+		for _, uri := range conceptID {
 			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingURIPrefix))
 		}
 
 		return ConcordanceDriver.ReadByConceptID(conceptUuids)
 	}
 
-	if authorityExist {
-		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
+	if authority != "" {
+		return ConcordanceDriver.ReadByAuthority(authority, identifierValue)
 	}
 
 	return Concordances{}, false, errors.New(neitherConceptIdNorAuthorityPresent)
 }
+
 
 const (
 	thingURIPrefix = "http://api.ft.com/things/"
@@ -137,4 +191,15 @@ const (
 	conceptAndAuthorityCannotBeBothPresent   = "If conceptId is present then authority is not a valid parameter"
 	authorityIsMandatoryIfConceptIdIsMissing = "If conceptId is absent then authority is mandatory"
 	neitherConceptIdNorAuthorityPresent      = "Neither conceptId nor authority were present"
+	invalidBody                              = "The body cannot be processed"
+	connotUnmarshallJSON                     = "JSON cannot be processed"
+	authorityIsEmpty		                 = "Authority cannot be empty"
+	identifierValuesIsMissing				 = "IdentifierValue is missing"
+
 )
+
+type authorityAndConcepts struct {
+	ConceptID   []string `json:"conceptId,omitempty"`
+	Authority   string `json:"authority,omitempty"`
+	IdentifierValue []string `json:"identifierValue,omitempty"`
+}
