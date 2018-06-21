@@ -1,30 +1,33 @@
-FROM golang:1.8-alpine
+FROM golang:1.10-alpine
 
-RUN mkdir -p "$GOPATH/src"
+ENV PROJECT="public-concordances-api"
 
-ADD . "$GOPATH/src/github.com/Financial-Times/public-concordances-api"
+# Include code
+ENV ORG_PATH="github.com/Financial-Times"
+ENV SRC_FOLDER="${GOPATH}/src/${ORG_PATH}/${PROJECT}"
+COPY . ${SRC_FOLDER}
+WORKDIR ${SRC_FOLDER}
 
-WORKDIR "$GOPATH/src/github.com/Financial-Times/public-concordances-api"
+# Set up our extra bits in the image
+RUN apk --no-cache add git curl
+RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-RUN apk --no-cache --virtual .build-dependencies add git \
-    && apk --no-cache --upgrade add ca-certificates \
-    && update-ca-certificates --fresh \
-    && git config --global http.https://gopkg.in.followRedirects true \
-    && cd $GOPATH/src/github.com/Financial-Times/public-concordances-api \
-    && BUILDINFO_PACKAGE="github.com/Financial-Times/public-concordances-api/vendor/github.com/Financial-Times/service-status-go/buildinfo." \
+# Install dependancies and build app
+RUN $GOPATH/bin/dep ensure -vendor-only
+RUN BUILDINFO_PACKAGE="${ORG_PATH}/${PROJECT}/vendor/${ORG_PATH}/service-status-go/buildinfo." \
     && VERSION="version=$(git describe --tag --always 2> /dev/null)" \
     && DATETIME="dateTime=$(date -u +%Y%m%d%H%M%S)" \
     && REPOSITORY="repository=$(git config --get remote.origin.url)" \
     && REVISION="revision=$(git rev-parse HEAD)" \
     && BUILDER="builder=$(go version)" \
-    && LDFLAGS="-X '"${BUILDINFO_PACKAGE}$VERSION"' -X '"${BUILDINFO_PACKAGE}$DATETIME"' -X '"${BUILDINFO_PACKAGE}$REPOSITORY"' -X '"${BUILDINFO_PACKAGE}$REVISION"' -X '"${BUILDINFO_PACKAGE}$BUILDER"'" \
-    && go get -u github.com/kardianos/govendor \
-    && $GOPATH/bin/govendor sync \
-    && go-wrapper download \
-    && go-wrapper install -ldflags="${LDFLAGS}" \
-    && apk del .build-dependencies \
-    && rm -rf $GOPATH/src $GOPATH/pkg /usr/local/go
+    && LDFLAGS="-s -w -X '"${BUILDINFO_PACKAGE}$VERSION"' -X '"${BUILDINFO_PACKAGE}$DATETIME"' -X '"${BUILDINFO_PACKAGE}$REPOSITORY"' -X '"${BUILDINFO_PACKAGE}$REVISION"' -X '"${BUILDINFO_PACKAGE}$BUILDER"'" \
+    && CGO_ENABLED=0 go build -a -o /artifacts/${PROJECT} -ldflags="${LDFLAGS}"
 
-EXPOSE 8080
 
-CMD ["go-wrapper", "run"]
+# Multi-stage build - copy only the certs and the binary into the image
+FROM scratch
+WORKDIR /
+COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=0 /artifacts/* /
+
+CMD [ "/public-concordances-api" ]
