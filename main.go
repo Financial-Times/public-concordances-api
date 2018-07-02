@@ -9,7 +9,7 @@ import (
 
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
-	"github.com/Financial-Times/http-handlers-go/httphandlers"
+	log "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/public-concordances-api/concordances"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
@@ -17,13 +17,17 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/rcrowley/go-metrics"
-	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	app := cli.App("public-concordances-api", "A public RESTful API for accessing concordances in neo4j")
 
+	appSystemCode := app.String(cli.StringOpt{
+		Name:   "app-system-code",
+		Value:  "public-concordance-api",
+		Desc:   "System Code of the application",
+		EnvVar: "APP_SYSTEM_CODE",
+	})
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
 		Value:  "http://localhost:7474/db/data",
@@ -88,14 +92,9 @@ func main() {
 		log.Infof("public-concordances-api will listen on port: %s, connecting to: %s", *port, *neoURL)
 		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval, *batchSize)
 	}
-	log.SetFormatter(&log.JSONFormatter{})
-	lvl, err := log.ParseLevel(*logLevel)
-	if err != nil {
-		log.WithField("LOG_LEVEL", *logLevel).Warn("Cannot parse log level, setting it to INFO.")
-		lvl = log.InfoLevel
-	}
-	log.SetLevel(lvl)
-	log.WithFields(log.Fields{
+
+	log.InitLogger(*appSystemCode, *logLevel)
+	log.WithFields(map[string]interface{}{
 		"HEALTHCHECK_INTERVAL": *healthcheckInterval,
 		"CACHE_DURATION":       *cacheDuration,
 		"NEO_URL":              *neoURL,
@@ -146,8 +145,8 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	servicesRouter.Handle("/concordances", mh)
 
 	var monitoringRouter http.Handler = servicesRouter
-	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), monitoringRouter)
-	monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
+	//monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), monitoringRouter)
+	//monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
 
 	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,
 	// so it's what apps expect currently same as ping, the content of build-info needs more definition
