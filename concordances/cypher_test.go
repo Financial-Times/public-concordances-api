@@ -10,13 +10,16 @@ import (
 
 	"sort"
 
-	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/Financial-Times/organisations-rw-neo4j/organisations"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	logger.InitDefaultLogger("TestPublicConcordancesAPI")
+}
 
 var concordedBrandSmartlogic = Concordance{
 	Concept{
@@ -54,58 +57,104 @@ var concordedBrandTMEUPP = Concordance{
 		IdentifierValue: "70f4732b-7f7d-30a1-9c29-0cceec23760e"},
 }
 
-var mainOrganisationLEI = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/21a5cc0-d326-4e62-b84a-d840c2209fee",
-		APIURL: "http://api.ft.com/organisations/f21a5cc0-d326-4e62-b84a-d840c2209fee"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/LEI",
-		IdentifierValue: "7ZW8QJWVPR4P1J1KQY45"},
+var expectedConcordanceBankOfTest = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "2cdeb859-70df-3a0e-b125-f958366bea44"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/FACTSET",
+				IdentifierValue: "7IV872-E"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/FT-TME",
+				IdentifierValue: "QmFuayBvZiBUZXN0-T04="},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/LEI",
+				IdentifierValue: "VNF516RB4DFV5NQ22UF0"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/SMARTLOGIC",
+				IdentifierValue: "cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "d56e7388-25cb-343e-aea9-8b512e28476e"},
+		},
+	},
 }
 
-var childOrganisationFactset = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/f21a5cc0-d326-4e62-b84a-d840c2209fee",
-		APIURL: "http://api.ft.com/organisations/f21a5cc0-d326-4e62-b84a-d840c2209fee"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/FACTSET",
-		IdentifierValue: "003JLG-E"},
+var expectedConcordanceBankOfTestByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/FACTSET",
+				IdentifierValue: "7IV872-E"},
+		},
+	},
 }
 
-var childOrganisationFactsetUPP = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/f21a5cc0-d326-4e62-b84a-d840c2209fee",
-		APIURL: "http://api.ft.com/organisations/f21a5cc0-d326-4e62-b84a-d840c2209fee"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/UPP",
-		IdentifierValue: "f21a5cc0-d326-4e62-b84a-d840c2209fee"},
+var expectedConcordanceBankOfTestByUPPAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "d56e7388-25cb-343e-aea9-8b512e28476e"},
+		},
+	},
 }
 
-var childOrganisationLEI = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/f21a5cc0-d326-4e62-b84a-d840c2209fee",
-		APIURL: "http://api.ft.com/organisations/f21a5cc0-d326-4e62-b84a-d840c2209fee"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/LEI",
-		IdentifierValue: "7ZW8QJWVPR4P1J1KQY45"},
-}
-
-var mainOrganisationTME = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/3e844449-b27f-40d4-b696-2ce9b6137133",
-		APIURL: "http://api.ft.com/organisations/3e844449-b27f-40d4-b696-2ce9b6137133"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/FT-TME",
-		IdentifierValue: "TnN0ZWluX09OX0ZvcnR1bmVDb21wYW55X05XUw==-T04="},
-}
-
-var mainOrganisationTMEUPP = Concordance{
-	Concept{
-		ID:     "http://api.ft.com/things/3e844449-b27f-40d4-b696-2ce9b6137133",
-		APIURL: "http://api.ft.com/organisations/3e844449-b27f-40d4-b696-2ce9b6137133"},
-	Identifier{
-		Authority:       "http://api.ft.com/system/UPP",
-		IdentifierValue: "TnN0ZWluX09OX0ZvcnR1bmVDb21wYW55X05XUw==-T04="},
+var expectedConcordanceBankOfTestByLEIAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+				APIURL: "http://api.ft.com/organisations/cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/LEI",
+				IdentifierValue: "VNF516RB4DFV5NQ22UF0"},
+		},
+	},
 }
 
 var unconcordedBrandTME = Concordance{
@@ -163,29 +212,6 @@ func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
 	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic, concordedBrandSmartlogicUPP, concordedBrandTME, concordedBrandTMEUPP}}, conc, "TestNeoReadByConceptID_NewModel_Concorded")
 }
 
-func TestNeoReadByConceptID_NewModel_And_OldModel(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-	organisationRW := organisations.NewCypherOrganisationService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad", "f21a5cc0-d326-4e62-b84a-d840c2209fee"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(7, len(conc.Concordance))
-
-	sliceConcordances := []Concordance{childOrganisationFactset, childOrganisationFactsetUPP, childOrganisationLEI, concordedBrandTME, concordedBrandTMEUPP, concordedBrandSmartlogic, concordedBrandSmartlogicUPP}
-	readConceptAndCompare(t, Concordances{sliceConcordances}, conc, "TestNeoReadByConceptID_NewModel_And_OldModel")
-}
-
 func TestNeoReadByAuthority_NewModel_Unconcorded(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
@@ -223,86 +249,104 @@ func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
 	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic}}, conc, "TestNeoReadByAuthority_NewModel_Concorded")
 }
 
-func TestNeoReadByAuthority_NewModel_And_OldModel(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-	organisationRW := organisations.NewCypherOrganisationService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Main-3e844449-b27f-40d4-b696-2ce9b6137133.json", assert)
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"TnN0ZWluX09OX0ZvcnR1bmVDb21wYW55X05XUw==-T04=", "VGhlIFJvbWFu-QnJhbmRz"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(2, len(conc.Concordance))
-
-	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandTME, mainOrganisationTME}}, conc, "TestNeoReadByAuthority_NewModel_And_OldModel")
-}
-
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
-	organisationRW := organisations.NewCypherOrganisationService(db)
+	organisationRW := concepts.NewConceptService(db)
 	assert.NoError(organisationRW.Initialise())
 
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
 
 	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID([]string{"f21a5cc0-d326-4e62-b84a-d840c2209fee"})
+	cs, found, err := undertest.ReadByConceptID([]string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
 
-	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset, childOrganisationFactsetUPP, childOrganisationLEI}}, cs, "TestNeoReadByConceptIDToConcordancesMandatoryFields")
+	readConceptAndCompare(t, expectedConcordanceBankOfTest, cs, "TestNeoReadByConceptIDToConcordancesMandatoryFields")
 }
 
 func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	organisationRW := organisations.NewCypherOrganisationService(db)
+	organisationRW := concepts.NewConceptService(db)
 	assert.NoError(organisationRW.Initialise())
 
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
 
 	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"003JLG-E"})
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"7IV872-E"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
 
-	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset}}, cs, "TestNeoReadByAuthorityToConcordancesMandatoryFields")
+	readConceptAndCompare(t, expectedConcordanceBankOfTestByAuthority, cs, "TestNeoReadByAuthorityToConcordancesMandatoryFields")
+}
+
+func TestNeoReadByAuthorityToConcordancesByUPPAuthority(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+
+	organisationRW := concepts.NewConceptService(db)
+	assert.NoError(organisationRW.Initialise())
+
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
+
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UPP", []string{"d56e7388-25cb-343e-aea9-8b512e28476e"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.NotEmpty(cs.Concordance)
+
+	readConceptAndCompare(t, expectedConcordanceBankOfTestByUPPAuthority, cs, "TestNeoReadByAuthorityToConcordancesByUPPAuthority")
+}
+
+func TestNeoReadByAuthorityToConcordancesByLEIAuthority(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+
+	organisationRW := concepts.NewConceptService(db)
+	assert.NoError(organisationRW.Initialise())
+
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
+
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/LEI", []string{"VNF516RB4DFV5NQ22UF0"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.NotEmpty(cs.Concordance)
+
+	readConceptAndCompare(t, expectedConcordanceBankOfTestByLEIAuthority, cs, "TestNeoReadByAuthorityToConcordancesByLEIAuthority")
 }
 
 func TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	organisationRW := organisations.NewCypherOrganisationService(db)
+	organisationRW := concepts.NewConceptService(db)
 	assert.NoError(organisationRW.Initialise())
 
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
 
 	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"003JLG-E"})
+	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"7IV872-E"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
 	assert.Equal(len(cs.Concordance), 1)
 
-	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset}}, cs, "TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue")
+	readConceptAndCompare(t, expectedConcordanceBankOfTestByAuthority, cs, "TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue")
 }
 
 func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *testing.T) {
@@ -310,31 +354,31 @@ func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *t
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	organisationRW := organisations.NewCypherOrganisationService(db)
+	organisationRW := concepts.NewConceptService(db)
 	assert.NoError(organisationRW.Initialise())
 
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
 
 	defer cleanUp(assert, db)
 
 	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID([]string{"f21a5cc0-d326-4e62-b84a-d840c2209fee"})
+	cs, found, err := undertest.ReadByConceptID([]string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"})
 	assert.NoError(err)
 	assert.True(found)
 	assert.NotEmpty(cs.Concordance)
-	assert.Equal(3, len(cs.Concordance))
+	assert.Equal(7, len(cs.Concordance))
 
-	readConceptAndCompare(t, Concordances{[]Concordance{childOrganisationFactset, childOrganisationFactsetUPP, childOrganisationLEI}}, cs, "TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers")
+	readConceptAndCompare(t, expectedConcordanceBankOfTest, cs, "TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers")
 }
 
 func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.T) {
 	assert := assert.New(t)
 	db := getDatabaseConnection(t, assert)
 
-	organisationRW := organisations.NewCypherOrganisationService(db)
+	organisationRW := concepts.NewConceptService(db)
 	assert.NoError(organisationRW.Initialise())
 
-	writeJSONToService(organisationRW, "./fixtures/Organisation-Child-f21a5cc0-d326-4e62-b84a-d840c2209fee.json", assert)
+	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
 
 	defer cleanUp(assert, db)
 
@@ -385,16 +429,6 @@ func writeGenericConceptJSONToService(service concepts.ConceptService, pathToJSO
 	inst, _, errr := service.DecodeJSON(dec)
 	assert.NoError(errr)
 	_, errrr := service.Write(inst, "test_transaction_id")
-	assert.NoError(errrr)
-}
-
-func writeJSONToService(service baseftrwapp.Service, pathToJSONFile string, assert *assert.Assertions) {
-	f, err := os.Open(pathToJSONFile)
-	assert.NoError(err)
-	dec := json.NewDecoder(f)
-	inst, _, errr := service.DecodeJSON(dec)
-	assert.NoError(errr)
-	errrr := service.Write(inst, "test_transaction_id")
 	assert.NoError(errrr)
 }
 

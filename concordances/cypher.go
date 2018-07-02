@@ -3,10 +3,10 @@ package concordances
 import (
 	"fmt"
 
+	log "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
-	log "github.com/sirupsen/logrus"
 )
 
 // Driver interface
@@ -32,29 +32,27 @@ func (pcw CypherDriver) CheckConnectivity() error {
 	return neoutils.Check(pcw.conn)
 }
 
-type neoReadStruct struct {
-	UUID       string        `json:"uuid"`
-	Types      []string      `json:"types"`
-	Identifier neoIdentifier `json:"identifier"`
-}
-
-type neoIdentifier struct {
-	Labels []string `json:"labels"`
-	Value  string   `json:"value"`
-}
-
 func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
-	results := []neoReadStruct{}
+	var results []neoReadStruct
 	query := &neoism.CypherQuery{
 		Statement: `
-		MATCH (p:Concept)<-[:IDENTIFIES]-(i:UPPIdentifier)
-		WHERE i.value in {identifiers}
-		MATCH (p)-[:IDENTIFIES]-(ids:Identifier)
-		OPTIONAL MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		OPTIONAL MATCH (leafNode:Concept)-[:EQUIVALENT_TO]->(canonical)
-		OPTIONAL MATCH (leafNode)<-[:IDENTIFIES]-(leafId:Identifier)
-		WITH COALESCE(canonical.prefUUID, p.uuid) AS uuid, COALESCE(labels(canonical), labels(p)) AS types, COALESCE(leafId, ids) as nodeIds
-		RETURN DISTINCT uuid, types, {labels:labels(nodeIds), value:nodeIds.value} as identifier
+		MATCH (p:Concept)
+		WHERE p.uuid in {identifiers}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Concept)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, leafNode.authority as authority, leafNode.authorityValue as authorityValue
+		UNION ALL
+		MATCH (p:Concept)
+		WHERE p.uuid in {identifiers}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		WHERE exists(canonical.leiCode)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'LEI' as authority, canonical.leiCode as authorityValue
+		UNION ALL
+		MATCH (p:Concept)
+		WHERE p.uuid in {identifiers}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Concept)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'UPP' as authority, leafNode.uuid as authorityValue
         `,
 		Parameters: neoism.Props{"identifiers": identifiers},
 		Result:     &results,
@@ -63,7 +61,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier: %v", identifiers)
+		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for identifier: %v", identifiers)
 	}
 
 	if (len(results)) == 0 {
@@ -79,30 +77,63 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 }
 
 func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
-	results := []neoReadStruct{}
+	var results []neoReadStruct
 
-	authorityLabel := mapAuthorityToIdentifierLabel(authority)
-	if authorityLabel == "" {
+	authorityProperty, found := AuthorityFromURI(authority)
+	if !found {
 		return Concordances{}, false, nil
 	}
 
-	query := &neoism.CypherQuery{
-		Statement: fmt.Sprintf(`
-		MATCH (p:Concept)<-[:IDENTIFIES]-(ids:Identifier:%s)
- 		WHERE ids.value in {identifierValues}
-		OPTIONAL MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
-		RETURN COALESCE(canonical.prefUUID, p.uuid) AS uuid, COALESCE(labels(canonical), labels(p)) AS types, {labels:labels(ids), value:ids.value} as identifier`, authorityLabel),
+	var query *neoism.CypherQuery
 
-		Parameters: neoism.Props{
-			"identifierValues": identifierValues,
-		},
-		Result: &results,
+	if authorityProperty == "UPP" {
+		// We need to treat the UPP authority slightly different as it's stored elsewhere.
+		query = &neoism.CypherQuery{
+			Statement: `
+		MATCH (p:Concept)
+		WHERE p.uuid IN {authorityValue}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'UPP' as authority, p.uuid as authorityValue`,
+
+			Parameters: neoism.Props{
+				"authorityValue": identifierValues,
+			},
+			Result: &results,
+		}
+	} else if authorityProperty == "LEI" {
+		// We've gotta treat LEI special like as well.
+		query = &neoism.CypherQuery{
+			Statement: `
+		MATCH (p:Concept)
+		WHERE p.leiCode IN {authorityValue}
+		AND exists(p.prefUUID)
+		RETURN DISTINCT p.prefUUID AS canonicalUUID, labels(p) AS types, p.uuid as UUID, 'LEI' as authority, p.leiCode as authorityValue`,
+
+			Parameters: neoism.Props{
+				"authorityValue": identifierValues,
+			},
+			Result: &results,
+		}
+	} else {
+		query = &neoism.CypherQuery{
+			Statement: `
+		MATCH (p:Concept)
+		WHERE p.authority = {authority} AND p.authorityValue IN {authorityValue}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, p.authority as authority, p.authorityValue as authorityValue`,
+
+			Parameters: neoism.Props{
+				"authorityValue": identifierValues,
+				"authority":      authorityProperty,
+			},
+			Result: &results,
+		}
 	}
 
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
 		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore for identifier: %v", identifierValues)
+		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for identifier: %v", identifierValues)
 	}
 
 	if (len(results)) == 0 {
@@ -139,11 +170,14 @@ func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances 
 		var con = Concordance{}
 		var concept = Concept{}
 
-		log.Debug(neoCon)
-
-		concept.ID = mapper.IDURL(neoCon.UUID)
-		concept.APIURL = mapper.APIURL(neoCon.UUID, neoCon.Types, env)
-		con.Identifier = Identifier{Authority: mapNeoLabelsToAuthorityValue(neoCon.Identifier.Labels), IdentifierValue: neoCon.Identifier.Value}
+		concept.ID = mapper.IDURL(neoCon.CanonicalUUID)
+		concept.APIURL = mapper.APIURL(neoCon.CanonicalUUID, neoCon.Types, env)
+		authorityURI, found := AuthorityToURI(neoCon.Authority)
+		if !found {
+			log.Debugf("Unsupported authority: %s", neoCon.Authority)
+			continue
+		}
+		con.Identifier = Identifier{Authority: authorityURI, IdentifierValue: neoCon.AuthorityValue}
 
 		con.Concept = concept
 		concordances.Concordance = append(concordances.Concordance, con)
@@ -151,77 +185,28 @@ func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances 
 	return concordances
 }
 
-func mapNeoLabelsToAuthorityValue(labelNames []string) (authority string) {
-	for _, label := range labelNames {
-		switch label {
-		// Old style node label lookup
-		case TME_ID_NODE_LABEL:
-			return TME_AUTHORITY
-		case FS_ID_NODE_LABEL:
-			return FS_AUTHORITY
-		case UP_ID_NODE_LABEL:
-			return UP_AUTHORITY
-		case LEI_ID_NODE_LABEL:
-			return LEI_AUTHORITY
-		case SL_ID_NODE_LABEL:
-			return SL_AUTHORITY
+// Map of authority to URI for the supported concordance IDs
+var authorityMap = map[string]string{
+	"TME":        "http://api.ft.com/system/FT-TME",
+	"FACTSET":    "http://api.ft.com/system/FACTSET",
+	"UPP":        "http://api.ft.com/system/UPP",
+	"LEI":        "http://api.ft.com/system/LEI",
+	"Smartlogic": "http://api.ft.com/system/SMARTLOGIC",
+	"Geonames":   "http://api.ft.com/system/GEONAMES",
+	"Wikidata":   "http://api.ft.com/system/WIKIDATA",
+	"DBPedia":    "http://api.ft.com/system/DBPEDIA",
+}
 
-		// New style authority properties
-		case FS_AUTHORITY_PROPERTY:
-			return FS_AUTHORITY
-		case UP_AUTHORITY_PROPERTY:
-			return UP_AUTHORITY
-		case SL_AUTHORITY_PROPERTY:
-			return SL_AUTHORITY
-		case TME_AUTHORITY_PROPERTY:
-			return TME_AUTHORITY
+func AuthorityFromURI(uri string) (string, bool) {
+	for a, u := range authorityMap {
+		if u == uri {
+			return a, true
 		}
 	}
-	return ""
+	return "", false
 }
 
-func mapAuthorityToAuthorityProperty(authority string) string {
-	switch authority {
-	case TME_AUTHORITY:
-		return TME_AUTHORITY_PROPERTY
-	case FS_AUTHORITY:
-		return FS_AUTHORITY_PROPERTY
-	case SL_AUTHORITY:
-		return SL_AUTHORITY_PROPERTY
-	default:
-		return ""
-	}
+func AuthorityToURI(authority string) (string, bool) {
+	authorityURI, found := authorityMap[authority]
+	return authorityURI, found
 }
-
-func mapAuthorityToIdentifierLabel(authority string) (label string) {
-	switch authority {
-	case UP_AUTHORITY:
-		return UP_ID_NODE_LABEL
-	case SL_AUTHORITY:
-		return SL_ID_NODE_LABEL
-	case TME_AUTHORITY:
-		return TME_ID_NODE_LABEL
-	case FS_AUTHORITY:
-		return FS_ID_NODE_LABEL
-	case LEI_AUTHORITY:
-		return LEI_ID_NODE_LABEL
-	}
-	return ""
-}
-
-const TME_AUTHORITY = "http://api.ft.com/system/FT-TME"
-const FS_AUTHORITY = "http://api.ft.com/system/FACTSET"
-const UP_AUTHORITY = "http://api.ft.com/system/UPP"
-const LEI_AUTHORITY = "http://api.ft.com/system/LEI"
-const SL_AUTHORITY = "http://api.ft.com/system/SMARTLOGIC"
-
-const TME_ID_NODE_LABEL = "TMEIdentifier"
-const FS_ID_NODE_LABEL = "FactsetIdentifier"
-const UP_ID_NODE_LABEL = "UPPIdentifier"
-const LEI_ID_NODE_LABEL = "LegalEntityIdentifier"
-const SL_ID_NODE_LABEL = "SmartlogicIdentifier"
-
-const TME_AUTHORITY_PROPERTY = "TME"
-const FS_AUTHORITY_PROPERTY = "FACTSET"
-const UP_AUTHORITY_PROPERTY = "UPP"
-const SL_AUTHORITY_PROPERTY = "Smartlogic"
