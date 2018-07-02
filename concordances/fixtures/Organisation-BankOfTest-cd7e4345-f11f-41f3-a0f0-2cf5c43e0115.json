@@ -1,0 +1,48 @@
+{
+  "prefUUID": "cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+  "prefLabel": "Bank of Test",
+  "type": "Organisation",
+  "aliases": [
+    "Bank of Test",
+    "BANK OF TEST"
+  ],
+  "countryCode": "GB",
+  "countryOfIncorporation": "GB",
+  "leiCode": "VNF516RB4DFV5NQ22UF0",
+  "sourceRepresentations": [
+    {
+      "uuid": "2cdeb859-70df-3a0e-b125-f958366bea44",
+      "type": "Organisation",
+      "prefLabel": "Bank of Test",
+      "authority": "FACTSET",
+      "authorityValue": "7IV872-E",
+      "aliases": [
+        "Bank of Test",
+        "BANK OF TEST"
+      ],
+      "countryCode": "GB",
+      "countryOfIncorporation": "GB",
+      "leiCode": "VNF516RB4DFV5NQ22UF0"
+    },
+    {
+      "uuid": "d56e7388-25cb-343e-aea9-8b512e28476e",
+      "type": "Organisation",
+      "prefLabel": "Bank of Test",
+      "authority": "TME",
+      "authorityValue": "QmFuayBvZiBUZXN0-T04=",
+      "aliases": [
+        "Bank of Test"
+      ]
+    },
+    {
+      "uuid": "cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+      "type": "Organisation",
+      "prefLabel": "Bank of Test",
+      "authority": "Smartlogic",
+      "authorityValue": "cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+      "aliases": [
+        "Bank of Test"
+      ]
+    }
+  ]
+}
