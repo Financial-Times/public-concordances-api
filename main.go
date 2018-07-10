@@ -10,6 +10,7 @@ import (
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	log "github.com/Financial-Times/go-logger"
+	"github.com/Financial-Times/http-handlers-go/httphandlers"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/Financial-Times/public-concordances-api/concordances"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
@@ -17,6 +18,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/rcrowley/go-metrics"
 )
 
 func main() {
@@ -145,8 +147,8 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	servicesRouter.Handle("/concordances", mh)
 
 	var monitoringRouter http.Handler = servicesRouter
-	//monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.StandardLogger(), monitoringRouter)
-	//monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
+	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.Logger(), monitoringRouter)
+	monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
 
 	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,
 	// so it's what apps expect currently same as ping, the content of build-info needs more definition
