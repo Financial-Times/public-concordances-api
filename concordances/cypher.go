@@ -138,7 +138,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 	} else {
 		query = &neoism.CypherQuery{
 			Statement: `
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.authority = {authority} AND p.authorityValue IN {authorityValue}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, p.authority as authority, p.authorityValue as authorityValue`,
