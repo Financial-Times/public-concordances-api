@@ -97,7 +97,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		// We need to treat the UPP authority slightly different as it's stored elsewhere.
 		query = &neoism.CypherQuery{
 			Statement: `
-		MATCH (p:Concept)
+		MATCH (p:Thing)
 		WHERE p.uuid IN {authorityValue}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'UPP' as authority, p.uuid as authorityValue`,
