@@ -61,6 +61,14 @@ var concordedManagedLocationByConceptId = Concordances{
 				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
 				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
 			Identifier{
+				Authority:       "http://api.ft.com/system/ISO-3166-1",
+				IdentifierValue: "RO"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
 				Authority:       "http://api.ft.com/system/UPP",
 				IdentifierValue: "4534282c-d3ee-3595-9957-81a9293200f3"},
 		},
@@ -92,6 +100,19 @@ var concordedManagedLocationByAuthority = Concordances{
 			Identifier{
 				Authority:       "http://api.ft.com/system/MANAGEDLOCATION",
 				IdentifierValue: "5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+		},
+	},
+}
+
+var concordedManagedLocationByISO31661Authority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+				APIURL: "http://api.ft.com/things/5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/ISO-3166-1",
+				IdentifierValue: "RO"},
 		},
 	},
 }
@@ -328,7 +349,7 @@ func TestNeoReadByConceptId_ManagedLocation(t *testing.T) {
 	conc, found, err := undertest.ReadByConceptID([]string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
 	assert.NoError(err)
 	assert.True(found)
-	assert.Equal(6, len(conc.Concordance))
+	assert.Equal(7, len(conc.Concordance))
 
 	readConceptAndCompare(t, concordedManagedLocationByConceptId, conc, "TestNeoReadByConceptId_ManagedLocation")
 }
@@ -349,6 +370,24 @@ func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
 	assert.Equal(1, len(conc.Concordance))
 
 	readConceptAndCompare(t, concordedManagedLocationByAuthority, conc, "TestNeoReadByAuthority_ManagedLocation")
+}
+
+func TestNeoReadByAuthority_ISO31661(t *testing.T) {
+	assert := assert.New(t)
+	db := getDatabaseConnection(t, assert)
+	conceptRW := concepts.NewConceptService(db)
+	assert.NoError(conceptRW.Initialise())
+
+	writeGenericConceptJSONToService(conceptRW, "./fixtures/ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json", assert)
+	defer cleanUp(assert, db)
+
+	undertest := NewCypherDriver(db, "prod")
+	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/ISO-3166-1", []string{"RO"})
+	assert.NoError(err)
+	assert.True(found)
+	assert.Equal(1, len(conc.Concordance))
+
+	readConceptAndCompare(t, concordedManagedLocationByISO31661Authority, conc, "TestNeoReadByAuthority_ManagedLocation")
 }
 
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {

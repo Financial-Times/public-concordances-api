@@ -9,6 +9,7 @@
     "Romania"
   ],
   "scopeNote": "Country in Eastern Europe",
+  "iso31661": "RO",
   "sourceRepresentations": [
     {
       "uuid": "4411b761-e632-30e7-855c-06aeca76c48d",
@@ -39,7 +40,8 @@
       "authorityValue": "5aba454b-3e31-31b9-bdeb-0caf83f62b44",
       "aliases": [
         "Romania"
-      ]
+      ],
+      "iso31661": "RO"
     }
   ]
 }
