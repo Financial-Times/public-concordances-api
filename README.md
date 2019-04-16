@@ -25,7 +25,7 @@ Running the tests
     --publish=7474:7474 --publish=7687:7687 \
     -e NEO4J_ACCEPT_LICENSE_AGREEMENT="yes" \
     -e NEO4J_AUTH="none" \
-    neo4j:3.2.7-enterprise
+    neo4j:3.4.10-enterprise
     
     go test -race ./...	
     

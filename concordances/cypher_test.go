@@ -387,7 +387,7 @@ func TestNeoReadByAuthority_ISO31661(t *testing.T) {
 	assert.True(found)
 	assert.Equal(1, len(conc.Concordance))
 
-	readConceptAndCompare(t, concordedManagedLocationByISO31661Authority, conc, "TestNeoReadByAuthority_ManagedLocation")
+	readConceptAndCompare(t, concordedManagedLocationByISO31661Authority, conc, "TestNeoReadByAuthority_ISO31661")
 }
 
 func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
