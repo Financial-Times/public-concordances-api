@@ -1,0 +1,13 @@
+FROM golang:1
+
+ENV PROJECT=public-concordances-api
+
+COPY . /${PROJECT}/
+WORKDIR /${PROJECT}
+
+RUN echo "Fetching dependencies..." \
+  && git clone https://github.com/vishnubob/wait-for-it.git \
+  && cd wait-for-it \
+  && mv ./wait-for-it.sh /${PROJECT}
+
+ENTRYPOINT ["./wait-for-it.sh", "neo4j:7474", "-t", "60", "--"]
