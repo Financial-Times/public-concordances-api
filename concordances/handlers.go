@@ -31,7 +31,7 @@ func HealthCheck() fthealth.TimedHealthCheck {
 				{
 					BusinessImpact:   "Unable to respond to Public Concordances API requests",
 					Name:             "Check connectivity to Neo4j",
-					PanicGuide:       "https://dewey.in.ft.com/view/system/public-concordances-api",
+					PanicGuide:       "https://runbooks.ftops.tech/public-concordances-api",
 					Severity:         1,
 					TechnicalSummary: "Cannot connect to Neo4j a instance with at least one concordance loaded in it",
 					Checker:          Checker,

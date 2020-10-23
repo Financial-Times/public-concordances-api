@@ -6,28 +6,21 @@ __Provides a public API for Concordances stored in a Neo4j graph database__
 This Go app provides an endpoint for the retrieval of concordance data given one or more parameters. This app
 directly depends upon a connection to a Neo4j database.
 
-## Installation & running locally
-Installation assumes that `go` and `dep` have been installed and are available on the PATH.
+## Build
 
-* `go get -u github.com/Financial-Times/public-concordances-api`
-* `cd $GOPATH/src/github.com/Financial-Times/public-concordances-api`
-* `dep ensure`
-* `go install`
-* `$GOPATH/bin/public-concordances-api --neo-url={neo4jUrl} --port={port}`	
+```shell script
+go get github.com/Financial-Times/public-concordances-api
+cd $GOPATH/src/github.com/Financial-Times/public-concordances-api
+go build -mod=readonly .
+```
 
-_Both arguments are optional. \
---neo-url defaults to http://localhost:7474/db/data, which is the out of box url for a local neo4j instance. \
---port defaults to 8080._ 
+## Running the tests
 
-Running the tests
-
-    docker run --rm \
-    --publish=7474:7474 --publish=7687:7687 \
-    -e NEO4J_ACCEPT_LICENSE_AGREEMENT="yes" \
-    -e NEO4J_AUTH="none" \
-    neo4j:3.4.10-enterprise
-    
-    go test -race ./...	
+```shell script
+docker-compose -f docker-compose-tests.yml up -d --build && \
+docker logs -f public-concordances-api_test-runner_1 && \
+docker-compose -f docker-compose-tests.yml down
+```
     
 ## API Endpoints
 Based on the following [google doc](https://docs.google.com/a/ft.com/document/d/1onyyb-XoByB00RQNZvjNoL_IsO_eHKe-vOpUuAVHyJE)
