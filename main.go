@@ -7,17 +7,18 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	cli "github.com/jawher/mow.cli"
+	"github.com/rcrowley/go-metrics"
+
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	log "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/http-handlers-go/httphandlers"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/Financial-Times/public-concordances-api/concordances"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
-	_ "github.com/joho/godotenv/autoload"
-	"github.com/rcrowley/go-metrics"
+
+	"github.com/Financial-Times/public-concordances-api/concordances"
 )
 
 func main() {
@@ -125,18 +126,14 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 		"GET": http.HandlerFunc(concordances.GetConcordances),
 	}
 	servicesRouter.Handle("/concordances", mh)
+	servicesRouter.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(concordances.GTG))
 
 	var monitoringRouter http.Handler = servicesRouter
 	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.Logger(), monitoringRouter)
 	monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
 
-	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,
-	// so it's what apps expect currently same as ping, the content of build-info needs more definition
-	//using http router here to be able to catch "/"
 	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
-	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
-
-	http.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(concordances.GTG))
+	//http.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(concordances.GTG))
 	http.HandleFunc("/__health", fthealth.Handler(concordances.HealthCheck()))
 
 	http.Handle("/", monitoringRouter)
