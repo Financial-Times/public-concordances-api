@@ -1,0 +1,24 @@
+{{- $diferenciaDeployName := printf "diferencia-%s" .Chart.Name | trunc 63 | trimSuffix "-" -}}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{.Values.service.name}}
+  labels:
+    chart: "{{ .Chart.Name | trunc 63 }}"
+    chartVersion: "{{ .Chart.Version | trunc 63 }}"
+    app: "{{ $diferenciaDeployName }}"
+    visualize: "true"
+    hasHealthcheck: "false"
+spec:
+  ports:
+    - port: 8080
+      name: proxy
+      targetPort: 8080
+    - port: 8081
+      name: prometheus
+      targetPort: 8081
+    - port: 8082
+      name: admin
+      targetPort: 8082
+  selector:
+    app: "{{ $diferenciaDeployName }}"

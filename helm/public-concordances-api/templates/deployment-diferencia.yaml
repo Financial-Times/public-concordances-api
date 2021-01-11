@@ -1,0 +1,51 @@
+{{- $diferenciaDeployName := printf "diferencia-%s" .Chart.Name | trunc 63 | trimSuffix "-" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ $diferenciaDeployName }}"
+  labels:
+    chart: "{{ .Chart.Name | trunc 63 }}"
+    chartVersion: "{{ .Chart.Version | trunc 63 }}"
+    visualize: "true"
+    app: "{{ $diferenciaDeployName }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ $diferenciaDeployName }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ $diferenciaDeployName }}"
+        visualize: "true"
+    spec:
+      containers:
+      - name: diferencia
+        image: "karsov/diferencia:latest"
+        imagePullPolicy: IfNotPresent
+        args:
+        - start
+        - "--primary"
+        - "http://{{ .Values.service.name }}-orig:{{ .Values.env.app.port }}"
+        - "--candidate"
+        - "http://{{ .Values.service.name }}-shadow:{{ .Values.env.app.port }}"
+        - "--mirroring"
+        ports:
+        - containerPort: 8080
+          name: proxy
+        - containerPort: 8081
+          name: prometheus
+        - containerPort: 8082
+          name: admin
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+        readinessProbe:
+          httpGet:
+            path: "/healthdif"
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        resources:
+{{ toYaml .Values.resources | indent 12 }}
