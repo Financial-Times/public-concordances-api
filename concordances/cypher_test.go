@@ -574,44 +574,41 @@ func writeGenericConceptJSONToService(service concepts.ConceptService, pathToJSO
 }
 
 func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
+	queries := []*neoism.CypherQuery{}
 
-	qs := []*neoism.CypherQuery{
-		{
-			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "3e844449-b27f-40d4-b696-2ce9b6137133"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "f21a5cc0-d326-4e62-b84a-d840c2209fee"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (a:Thing {uuid: '%s'})--(i:Identifier) DETACH DELETE i, a", "f9694ba7-eab0-4ce0-8e01-ff64bccb813c"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "70f4732b-7f7d-30a1-9c29-0cceec23760e"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, e, i", "b20801ac-5a76-43cf-b816-8c3b2f7133ad"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "ad56856a-7d38-48e2-a131-7d104f17e8f6"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (t:Thing {uuid: '%v'})--(i:Identifier) OPTIONAL MATCH (t)-[:EQUIVALENT_TO]-(e:Thing) DETACH DELETE t, i", "dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"),
-		}, {
-			Statement: fmt.Sprintf("MATCH (t:Thing {prefUUID: '%v'}) DETACH DELETE t", "ad56856a-7d38-48e2-a131-7d104f17e8f6"),
-		},
+	// Concepts with canonical nodes
+	uuids := []string{
+		"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115",
+		"5aba454b-3e31-31b9-bdeb-0caf83f62b44",
+		"b20801ac-5a76-43cf-b816-8c3b2f7133ad",
+		"ad56856a-7d38-48e2-a131-7d104f17e8f6",
+	}
+	for _, uuid := range uuids {
+		query := &neoism.CypherQuery{
+			Statement: `
+				MATCH (canonical:Concept{prefUUID:{uuid}})--(source)
+				OPTIONAL MATCH (source)<-[:IDENTIFIES]-(identifier)
+				DETACH DELETE canonical, source, identifier`,
+			Parameters: neoism.Props{"uuid": uuid},
+		}
+		queries = append(queries, query)
 	}
 
-	err := db.CypherBatch(qs)
-	assert.NoError(err)
-
-}
-
-func cleanUpParentOrgAndUppIdentifier(db neoutils.NeoConnection, t *testing.T, assert *assert.Assertions) {
-	qs := []*neoism.CypherQuery{
-		{
-			//deletes parent 'org' which only has type Thing
-			Statement: fmt.Sprintf("MATCH (j:Thing {uuid: '%v'}) DETACH DELETE j", "3e844449-b27f-40d4-b696-2ce9b6137133"),
-		},
-		{
-			//deletes upp identifier for the above parent 'org'
-			Statement: fmt.Sprintf("MATCH (k:Identifier {value: '%v'}) DETACH DELETE k", "3e844449-b27f-40d4-b696-2ce9b6137133"),
-		},
+	// Things
+	uuids = []string{
+		"dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54",
+	}
+	for _, uuid := range uuids {
+		query := &neoism.CypherQuery{
+			Statement: `
+				MATCH (source:Thing{uuid:{uuid}})
+				OPTIONAL MATCH (source)<-[:IDENTIFIES]-(identifier)
+				DETACH DELETE source, identifier`,
+			Parameters: neoism.Props{"uuid": uuid},
+		}
+		queries = append(queries, query)
 	}
 
-	err := db.CypherBatch(qs)
+	err := db.CypherBatch(queries)
 	assert.NoError(err)
 }
