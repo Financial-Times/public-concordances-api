@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.service.name }}-orig
+  name: {{ .Values.service.name }}-shadow
   labels:
     chart: "{{ .Chart.Name | trunc 63 }}"
     chartVersion: "{{ .Chart.Version | trunc 63 }}"
     visualize: "true"
-    app: {{ .Values.service.name }}-orig
+    app: {{ .Values.service.name }}-shadow
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Values.service.name }}-orig
+      app: {{ .Values.service.name }}-shadow
   template:
     metadata:
       labels:
-        app: {{ .Values.service.name }}-orig
+        app: {{ .Values.service.name }}-shadow
         visualize: "true"
     spec:
       affinity:
@@ -26,11 +26,11 @@ spec:
               - key: app
                 operator: In
                 values:
-                - {{ .Values.service.name }}-orig
+                - {{ .Values.service.name }}-shadow
             topologyKey: "kubernetes.io/hostname"
       containers:
-      - name: {{ .Values.service.name }}-orig
-        image: "{{ .Values.image.repository }}:v1.4.1"
+      - name: {{ .Values.service.name }}-shadow
+        image: "{{ .Values.image.repository }}:{{ .Chart.Version }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
         - name: APP_PORT
