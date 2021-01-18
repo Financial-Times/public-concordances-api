@@ -8,7 +8,7 @@ public-concordances-api
 
 ## Primary URL
 
-https://upp-prod-delivery-glb.upp.ft.com/__public-concordances-api/
+<https://api.ft.com/concordances>
 
 ## Service Tier
 
@@ -42,10 +42,11 @@ AWS
 ## Architecture
 
 The service provides the following endpoints for the retrieval of concordance data:
+
 - GET `/concordances?conceptId={thingUri}` - returns a list of all identifiers for a given concept.
-- GET `/concordances?conceptId={thingUri}&conceptId={thingUri}...` - returns a list of all identifiers for each provided concept.    
+- GET `/concordances?conceptId={thingUri}&conceptId={thingUri}...` - returns a list of all identifiers for each provided concept.
 - GET `/concordances?authority={identifierUri}&identifierValue{identifierValue}` - returns the apiURL that matches the corresponding identifier.
-- GET `/concordances?authority={identifierUri}&idenifierValue={identifierValue}&idenifierValue={identifierValue}` - returns a list of all apiURLs for the corresponding identifiers.
+- GET `/concordances?authority={identifierUri}&identifierValue={identifierValue}&identifierValue={identifierValue}` - returns a list of all apiURLs for the corresponding identifiers.
 
 ## Contains Personal Data
 
@@ -73,7 +74,8 @@ FullyAutomated
 
 ## Failover Details
 
-The service is deployed in both Delivery clusters. The failover guide for the cluster is located here: https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/delivery-cluster.
+The service is deployed in both Delivery clusters. The failover guide for the cluster is located here:
+<https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/delivery-cluster>
 
 ## Data Recovery Process Type
 
@@ -107,8 +109,8 @@ There is no key rotation procedure for this system.
 
 Service in UPP K8S delivery clusters:
 
-- Delivery-Prod-EU health: https://upp-prod-delivery-eu.upp.ft.com/__health/__pods-health?service-name=public-concordances-api
-- Delivery-Prod-US health: https://upp-prod-delivery-us.upp.ft.com/__health/__pods-health?service-name=public-concordances-api
+- Delivery-Prod-EU health: <https://upp-prod-delivery-eu.upp.ft.com/__health/__pods-health?service-name=public-concordances-api>
+- Delivery-Prod-US health: <https://upp-prod-delivery-us.upp.ft.com/__health/__pods-health?service-name=public-concordances-api>
 
 ## First Line Troubleshooting
 
