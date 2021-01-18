@@ -262,272 +262,168 @@ var unconcordedBrandTMEUPP = Concordance{
 		IdentifierValue: "ad56856a-7d38-48e2-a131-7d104f17e8f6"},
 }
 
-func TestNeoReadByConceptID_NewModel_Unconcorded(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
+func TestNeoReadByConceptID(t *testing.T) {
+	db := getDatabaseConnection(t, assert.New(t))
 	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
+	assert.NoError(t, conceptRW.Initialise())
 
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json", assert)
-	defer cleanUp(assert, db)
+	tests := []struct {
+		name        string
+		fixture     string
+		conceptIDs  []string
+		expectedLen int
+		expected    Concordances
+	}{
+		{
+			name:        "NewModel_Unconcorded",
+			fixture:     "Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json",
+			conceptIDs:  []string{"ad56856a-7d38-48e2-a131-7d104f17e8f6"},
+			expectedLen: 2,
+			expected:    Concordances{[]Concordance{unconcordedBrandTME, unconcordedBrandTMEUPP}},
+		},
+		{
+			name:        "NewModel_Concorded",
+			fixture:     "Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json",
+			conceptIDs:  []string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+			expectedLen: 4,
+			expected:    Concordances{[]Concordance{concordedBrandSmartlogic, concordedBrandSmartlogicUPP, concordedBrandTME, concordedBrandTMEUPP}},
+		},
+		{
+			name:        "ManagedLocation",
+			fixture:     "ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json",
+			conceptIDs:  []string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			expectedLen: 7,
+			expected:    concordedManagedLocationByConceptId,
+		},
+		{
+			name:        "ToConcordancesMandatoryFields",
+			fixture:     "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			conceptIDs:  []string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			expectedLen: 7,
+			expected:    expectedConcordanceBankOfTest,
+		},
+		{
+			name:        "ReturnMultipleConcordancesForMultipleIdentifiers",
+			fixture:     "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			conceptIDs:  []string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
+			expectedLen: 7,
+			expected:    expectedConcordanceBankOfTest,
+		},
+	}
 
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByConceptID([]string{"ad56856a-7d38-48e2-a131-7d104f17e8f6"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(2, len(conc.Concordance))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
+			defer cleanUp(assert.New(t), db)
 
-	readConceptAndCompare(t, Concordances{[]Concordance{unconcordedBrandTME, unconcordedBrandTMEUPP}}, conc, "TestNeoReadByConceptID_NewModel_Unconcorded")
+			undertest := NewCypherDriver(db, "prod")
+			conc, found, err := undertest.ReadByConceptID(test.conceptIDs)
+			assert.NoError(t, err)
+			assert.True(t, found)
+			assert.Equal(t, test.expectedLen, len(conc.Concordance))
+
+			readConceptAndCompare(t, test.expected, conc, "TestNeoReadByConceptID_"+test.name)
+		})
+	}
 }
 
-func TestNeoReadByConceptID_NewModel_Concorded(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
+func TestNeoReadByAuthority(t *testing.T) {
+	db := getDatabaseConnection(t, assert.New(t))
 	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByConceptID([]string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(4, len(conc.Concordance))
-
-	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic, concordedBrandSmartlogicUPP, concordedBrandTME, concordedBrandTMEUPP}}, conc, "TestNeoReadByConceptID_NewModel_Concorded")
-}
-
-func TestNeoReadByAuthority_NewModel_Unconcorded(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json", assert)
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FT-TME", []string{"UGFydHkgcGVvcGxl-QnJhbmRz"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(1, len(conc.Concordance))
-
-	sliceConcordances := []Concordance{unconcordedBrandTME}
-	readConceptAndCompare(t, Concordances{sliceConcordances}, conc, "TestNeoReadByAuthority_NewModel_Unconcorded")
-}
-
-func TestNeoReadByAuthority_NewModel_Concorded(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json", assert)
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/SMARTLOGIC", []string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(1, len(conc.Concordance))
-
-	readConceptAndCompare(t, Concordances{[]Concordance{concordedBrandSmartlogic}}, conc, "TestNeoReadByAuthority_NewModel_Concorded")
-}
-
-func TestNeoReadByConceptId_ManagedLocation(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json", assert)
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByConceptID([]string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(7, len(conc.Concordance))
-
-	readConceptAndCompare(t, concordedManagedLocationByConceptId, conc, "TestNeoReadByConceptId_ManagedLocation")
-}
-
-func TestNeoReadByAuthority_ManagedLocation(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json", assert)
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/MANAGEDLOCATION", []string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(1, len(conc.Concordance))
-
-	readConceptAndCompare(t, concordedManagedLocationByAuthority, conc, "TestNeoReadByAuthority_ManagedLocation")
-}
-
-func TestNeoReadByAuthority_ISO31661(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	conceptRW := concepts.NewConceptService(db)
-	assert.NoError(conceptRW.Initialise())
-
-	writeGenericConceptJSONToService(conceptRW, "./fixtures/ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json", assert)
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	conc, found, err := undertest.ReadByAuthority("http://api.ft.com/system/ISO-3166-1", []string{"RO"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.Equal(1, len(conc.Concordance))
-
-	readConceptAndCompare(t, concordedManagedLocationByISO31661Authority, conc, "TestNeoReadByAuthority_ISO31661")
-}
-
-func TestNeoReadByConceptIDToConcordancesMandatoryFields(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID([]string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.NotEmpty(cs.Concordance)
-
-	readConceptAndCompare(t, expectedConcordanceBankOfTest, cs, "TestNeoReadByConceptIDToConcordancesMandatoryFields")
-}
-
-func TestNeoReadByAuthorityToConcordancesMandatoryFields(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"7IV872-E"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.NotEmpty(cs.Concordance)
-
-	readConceptAndCompare(t, expectedConcordanceBankOfTestByAuthority, cs, "TestNeoReadByAuthorityToConcordancesMandatoryFields")
-}
-
-func TestNeoReadByAuthorityToConcordancesByUPPAuthority(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UPP", []string{"d56e7388-25cb-343e-aea9-8b512e28476e"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.NotEmpty(cs.Concordance)
-
-	readConceptAndCompare(t, expectedConcordanceBankOfTestByUPPAuthority, cs, "TestNeoReadByAuthorityToConcordancesByUPPAuthority")
-}
-
-func TestNeoReadByAuthorityToConcordancesByLEIAuthority(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/LEI", []string{"VNF516RB4DFV5NQ22UF0"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.NotEmpty(cs.Concordance)
-
-	readConceptAndCompare(t, expectedConcordanceBankOfTestByLEIAuthority, cs, "TestNeoReadByAuthorityToConcordancesByLEIAuthority")
-}
-
-func TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/FACTSET", []string{"7IV872-E"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.NotEmpty(cs.Concordance)
-	assert.Equal(len(cs.Concordance), 1)
-
-	readConceptAndCompare(t, expectedConcordanceBankOfTestByAuthority, cs, "TestNeoReadByAuthorityOnlyOneConcordancePerIdentifierValue")
-}
-
-func TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers(t *testing.T) {
-
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByConceptID([]string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"})
-	assert.NoError(err)
-	assert.True(found)
-	assert.NotEmpty(cs.Concordance)
-	assert.Equal(7, len(cs.Concordance))
-
-	readConceptAndCompare(t, expectedConcordanceBankOfTest, cs, "TestNeoReadByConceptIdReturnMultipleConcordancesForMultipleIdentifiers")
-}
-
-func TestNeoReadByAuthorityEmptyConcordancesWhenUnsupportedAuthority(t *testing.T) {
-	assert := assert.New(t)
-	db := getDatabaseConnection(t, assert)
-
-	organisationRW := concepts.NewConceptService(db)
-	assert.NoError(organisationRW.Initialise())
-
-	writeGenericConceptJSONToService(organisationRW, "./fixtures/Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json", assert)
-
-	defer cleanUp(assert, db)
-
-	undertest := NewCypherDriver(db, "prod")
-	cs, found, err := undertest.ReadByAuthority("http://api.ft.com/system/UnsupportedAuthority", []string{"DANMUR-1"})
-	assert.NoError(err)
-	assert.False(found)
-	assert.Empty(cs.Concordance)
+	assert.NoError(t, conceptRW.Initialise())
+
+	tests := []struct {
+		name             string
+		fixture          string
+		authority        string
+		identifierValues []string
+		expected         Concordances
+		expectedErr      bool
+	}{
+		{
+			name:             "NewModel_Concorded",
+			fixture:          "Brand-Concorded-b20801ac-5a76-43cf-b816-8c3b2f7133ad.json",
+			authority:        "http://api.ft.com/system/SMARTLOGIC",
+			identifierValues: []string{"b20801ac-5a76-43cf-b816-8c3b2f7133ad"},
+			expected:         Concordances{[]Concordance{concordedBrandSmartlogic}},
+		},
+		{
+			name:             "NewModel_Unconcorded",
+			fixture:          "Brand-Unconcorded-ad56856a-7d38-48e2-a131-7d104f17e8f6.json",
+			authority:        "http://api.ft.com/system/FT-TME",
+			identifierValues: []string{"UGFydHkgcGVvcGxl-QnJhbmRz"},
+			expected:         Concordances{[]Concordance{unconcordedBrandTME}},
+		},
+		{
+			name:             "ManagedLocation",
+			fixture:          "ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json",
+			authority:        "http://api.ft.com/system/MANAGEDLOCATION",
+			identifierValues: []string{"5aba454b-3e31-31b9-bdeb-0caf83f62b44"},
+			expected:         concordedManagedLocationByAuthority,
+		},
+		{
+			name:             "ISO31661",
+			fixture:          "ManagedLocation-Concorded-5aba454b-3e31-31b9-bdeb-0caf83f62b44.json",
+			authority:        "http://api.ft.com/system/ISO-3166-1",
+			identifierValues: []string{"RO"},
+			expected:         concordedManagedLocationByISO31661Authority,
+		},
+		{
+			name:             "ToConcordancesMandatoryField",
+			fixture:          "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			authority:        "http://api.ft.com/system/FACTSET",
+			identifierValues: []string{"7IV872-E"},
+			expected:         expectedConcordanceBankOfTestByAuthority,
+		},
+		{
+			name:             "ToConcordancesByUPPAuthority",
+			fixture:          "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			authority:        "http://api.ft.com/system/UPP",
+			identifierValues: []string{"d56e7388-25cb-343e-aea9-8b512e28476e"},
+			expected:         expectedConcordanceBankOfTestByUPPAuthority,
+		},
+		{
+			name:             "ToConcordancesByLEIAuthority",
+			fixture:          "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			authority:        "http://api.ft.com/system/LEI",
+			identifierValues: []string{"VNF516RB4DFV5NQ22UF0"},
+			expected:         expectedConcordanceBankOfTestByLEIAuthority,
+		},
+		{
+			name:             "OnlyOneConcordancePerIdentifierValue",
+			fixture:          "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			authority:        "http://api.ft.com/system/FACTSET",
+			identifierValues: []string{"7IV872-E"},
+			expected:         expectedConcordanceBankOfTestByAuthority,
+		},
+		{
+			name:             "EmptyConcordancesWhenUnsupportedAuthority",
+			fixture:          "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
+			authority:        "http://api.ft.com/system/UnsupportedAuthority",
+			identifierValues: []string{"DANMUR-1"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
+			defer cleanUp(assert.New(t), db)
+
+			undertest := NewCypherDriver(db, "prod")
+			conc, found, err := undertest.ReadByAuthority(test.authority, test.identifierValues)
+			assert.NoError(t, err)
+
+			if len(test.expected.Concordance) > 0 {
+				assert.True(t, found)
+				assert.Equal(t, 1, len(conc.Concordance))
+				readConceptAndCompare(t, test.expected, conc, "TestNeoReadByAuthority_"+test.name)
+				return
+			}
+
+			assert.False(t, found)
+			assert.Empty(t, conc.Concordance)
+		})
+	}
 }
 
 func readConceptAndCompare(t *testing.T, expected Concordances, actual Concordances, testName string) {
