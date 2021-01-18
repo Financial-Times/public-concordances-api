@@ -262,6 +262,48 @@ var unconcordedBrandTMEUPP = Concordance{
 		IdentifierValue: "ad56856a-7d38-48e2-a131-7d104f17e8f6"},
 }
 
+var expectedConcordanceNAICSIndustryClassification = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+				APIURL: "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/SMARTLOGIC",
+				IdentifierValue: "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+				APIURL: "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/NAICS",
+				IdentifierValue: "5111"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+				APIURL: "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+		},
+	},
+}
+
+var expectedConcordanceNAICSIndustryClassificationByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
+				APIURL: "http://api.ft.com/things/38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/NAICS",
+				IdentifierValue: "5111"},
+		},
+	},
+}
+
 func TestNeoReadByConceptID(t *testing.T) {
 	db := getDatabaseConnection(t, assert.New(t))
 	conceptRW := concepts.NewConceptService(db)
@@ -308,6 +350,13 @@ func TestNeoReadByConceptID(t *testing.T) {
 			conceptIDs:  []string{"cd7e4345-f11f-41f3-a0f0-2cf5c43e0115"},
 			expectedLen: 7,
 			expected:    expectedConcordanceBankOfTest,
+		},
+		{
+			name:        "NAICSIndustryClassification",
+			fixture:     "NAICSIndustryClassification-38ee195d-ebdd-48a9-af4b-c8a322e7b04d.json",
+			conceptIDs:  []string{"38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
+			expectedLen: 3,
+			expected:    expectedConcordanceNAICSIndustryClassification,
 		},
 	}
 
@@ -397,6 +446,13 @@ func TestNeoReadByAuthority(t *testing.T) {
 			expected:         expectedConcordanceBankOfTestByAuthority,
 		},
 		{
+			name:             "NAICSIndustryClassification",
+			fixture:          "NAICSIndustryClassification-38ee195d-ebdd-48a9-af4b-c8a322e7b04d.json",
+			authority:        "http://api.ft.com/system/NAICS",
+			identifierValues: []string{"5111"},
+			expected:         expectedConcordanceNAICSIndustryClassificationByAuthority,
+		},
+		{
 			name:             "EmptyConcordancesWhenUnsupportedAuthority",
 			fixture:          "Organisation-BankOfTest-cd7e4345-f11f-41f3-a0f0-2cf5c43e0115.json",
 			authority:        "http://api.ft.com/system/UnsupportedAuthority",
@@ -478,6 +534,7 @@ func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
 		"5aba454b-3e31-31b9-bdeb-0caf83f62b44",
 		"b20801ac-5a76-43cf-b816-8c3b2f7133ad",
 		"ad56856a-7d38-48e2-a131-7d104f17e8f6",
+		"38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
 	}
 	for _, uuid := range uuids {
 		query := &neoism.CypherQuery{
