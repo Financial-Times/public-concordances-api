@@ -57,6 +57,13 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 		UNION ALL
 
+		MATCH (p:NAICSIndustryClassification)
+		WHERE p.uuid in {identifiers}
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		WHERE exists(canonical.industryIdentifier)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'NAICS' as authority, canonical.industryIdentifier as authorityValue
+		UNION ALL
+
 		MATCH (p:Thing)
 		WHERE p.uuid in {identifiers}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
@@ -130,6 +137,19 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		WHERE canonical.iso31661 IN {authorityValue}
 		AND exists(canonical.prefUUID)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
+			`,
+			Parameters: neoism.Props{
+				"authorityValue": identifierValues,
+			},
+			Result: &results,
+		}
+	} else if authorityProperty == "NAICS" {
+		query = &neoism.CypherQuery{
+			Statement: `
+		MATCH (canonical:NAICSIndustryClassification)
+		WHERE canonical.industryIdentifier IN {authorityValue}
+		AND exists(canonical.prefUUID)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'NAICS' as authority, canonical.industryIdentifier as authorityValue
 			`,
 			Parameters: neoism.Props{
 				"authorityValue": identifierValues,
@@ -219,6 +239,7 @@ var authorityMap = map[string]string{
 	"Geonames":        "http://api.ft.com/system/GEONAMES",
 	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
 	"DBPedia":         "http://api.ft.com/system/DBPEDIA",
+	"NAICS":           "http://api.ft.com/system/NAICS",
 }
 
 func AuthorityFromURI(uri string) (string, bool) {
