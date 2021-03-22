@@ -1,0 +1,155 @@
+openapi: 3.0.0
+info:
+  title: Public Concordances API
+  description: Provides a public API for Concordances stored in the Neo4j graph database
+  version: v1.4.2
+  contact:
+    name: Universal Publishing
+    email: Universal.Publishing.Platform@ft.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+paths:
+  "/concordances":
+    get:
+      summary: Retrieves list of concordances.
+      description: Given one or more concept UUIDs as conceptId or authority and one or more identifierValue query parameters returns  
+        a list of all identifiers for each concept provided.
+      tags:
+        - Public API
+      parameters:
+        - name: conceptId
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          examples: 
+            uri:
+              value: [http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e]
+              summary: conceptId as URI
+            uuid:
+              value: [8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e]
+              summary: conceptId as UUID
+        - name: authority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+                - http://api.ft.com/system/FT-TME
+                - http://api.ft.com/system/FACTSET
+                - http://api.ft.com/system/UPP
+                - http://api.ft.com/system/LEI
+                - http://api.ft.com/system/SMARTLOGIC
+                - http://api.ft.com/system/MANAGEDLOCATION
+                - http://api.ft.com/system/ISO-3166-1
+                - http://api.ft.com/system/GEONAMES
+                - http://api.ft.com/system/WIKIDATA
+                - http://api.ft.com/system/DBPEDIA
+                - http://api.ft.com/system/NAICS
+          examples: 
+            TME:
+              value: http://api.ft.com/system/FT-TME
+              summary: TME authority
+            NAICS:
+              value: http://api.ft.com/system/NAICS
+              summary: NAICS authority
+        - name: identifierValue
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          examples: 
+            TME:
+              value: [ZCDrZXR0bGV0eQ==-UE4=]
+              summary: TME identifier
+            NAICS:
+              value: [5111]
+              summary: NAICS identifier
+      responses:
+        "200":
+          description: Returns the concordances if they exists.
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    concordances:
+                      - concept:
+                          id: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                          apiUrl: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                        identifier:
+                          authority: http://api.ft.com/system/SMARTLOGIC
+                          identifierValue: 7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                      - concept:
+                          id: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                          apiUrl: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                        identifier:
+                          authority: http://api.ft.com/system/FT-TME
+                          identifierValue: NTQ5YzNmZDktOGM0YS00NWNlLTg4NzctNWEzMjM4NDY3OGJk-VG9waWNz
+                      - concept:
+                          id: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                          apiUrl: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                        identifier:
+                          authority: http://api.ft.com/system/UPP
+                          identifierValue: 7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                      - concept:
+                          id: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                          apiUrl: http://api.ft.com/things/7e0548e9-b8a1-4d64-b523-04aa0be1cf05
+                        identifier:
+                          authority: http://api.ft.com/system/UPP
+                          identifierValue: 2b08d48b-5af5-3f04-87eb-a43c1df01c7d
+        "400":
+          description: Bad request e.g. missing or incorrectly spelt parameters.
+        "404":
+          description: Not Found if no concordances record for the uuid path parameter is
+            found.
+        "405":
+          description: Method Not Allowed.
+        "500":
+          description: Internal Server Error if there was an issue processing the records.
+        "503":
+          description: Service Unavailable if it cannot connect to Neo4j.
+  /__health:
+    get:
+      summary: Healthchecks
+      description: Runs application healthchecks and returns FT Healthcheck style json.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Should always return 200 along with the output of the healthchecks -
+            regardless of whether the healthchecks failed or not. Please inspect
+            the overall `ok` property to see whether or not the application is
+            healthy.
+  /__build-info:
+    get:
+      summary: Build Information
+      description: Returns application build info, such as the git repository and revision,
+        the golang version it was built with, and the app release version.
+      tags:
+        - Info
+      responses:
+        "200":
+          description: Outputs build information as described in the summary.
+  /__gtg:
+    get:
+      summary: Good To Go
+      description: Lightly healthchecks the application, and returns a 200 if it's
+        Good-To-Go.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: The application is healthy enough to perform all its functions
+            correctly - i.e. good to go.
+        "503":
+          description: One or more of the applications healthchecks have failed, so please
+            do not use the app. See the /__health endpoint for more detailed
+            information.
+servers:
+  - url: https://api.ft.com/
