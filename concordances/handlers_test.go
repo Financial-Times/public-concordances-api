@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,9 +38,11 @@ func (driver mockConcordanceDriver) CheckConnectivity() error {
 }
 
 func init() {
+	log := logger.NewUPPLogger("public-concordances-api", "info")
+	hh := NewHTTPHandler(log)
 	ConcordanceDriver = mockConcordanceDriver{}
 	r := mux.NewRouter()
-	r.HandleFunc("/concordances", GetConcordances).Methods("GET")
+	r.HandleFunc("/concordances", hh.GetConcordances).Methods("GET")
 	server = httptest.NewServer(r)
 	concordanceURL = fmt.Sprintf("%s/concordances", server.URL) //Grab the address for the API endpoint
 	isFound = true

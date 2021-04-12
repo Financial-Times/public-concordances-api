@@ -123,8 +123,9 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 
 	// Then API specific ones:
 
+	hh := concordances.NewHTTPHandler(log)
 	mh := &handlers.MethodHandler{
-		"GET": http.HandlerFunc(concordances.GetConcordances),
+		"GET": http.HandlerFunc(hh.GetConcordances),
 	}
 	servicesRouter.Handle("/concordances", mh)
 

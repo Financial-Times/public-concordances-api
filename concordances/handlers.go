@@ -11,14 +11,22 @@ import (
 	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/service-status-go/gtg"
-	log "github.com/sirupsen/logrus"
 )
+
+type HTTPHandler struct {
+	log *logger.UPPLogger
+}
 
 // ConcordanceDriver for cypher queries
 var ConcordanceDriver Driver
 var CacheControlHeader string
 var connCheck error
+
+func NewHTTPHandler(log *logger.UPPLogger) *HTTPHandler {
+	return &HTTPHandler{log: log}
+}
 
 // HealthCheck provides an FT standard timed healthcheck for the /__health endpoint
 func HealthCheck() fthealth.TimedHealthCheck {
@@ -68,9 +76,8 @@ func GTG() gtg.Status {
 }
 
 // GetConcordances is the public API
-func GetConcordances(w http.ResponseWriter, r *http.Request) {
-
-	log.Debugf("Concordance request: %s", r.URL.RawQuery)
+func (hh *HTTPHandler) GetConcordances(w http.ResponseWriter, r *http.Request) {
+	hh.log.Debugf("Concordance request: %s", r.URL.RawQuery)
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 
 	_, conceptIDExist := m["conceptId"]
@@ -105,8 +112,6 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Jason, _ := json.Marshal(concordance)
-	log.Debugf("Concordance(uuid:%s): %s\n", Jason, Jason)
 	w.Header().Set("Cache-Control", CacheControlHeader)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(concordance)
