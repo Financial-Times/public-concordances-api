@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
+	"time"
 
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/gorilla/mux"
@@ -134,4 +136,18 @@ func TestCanNotRequestWithoutAuthorityOrConceptId(t *testing.T) {
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	assert.EqualValues(400, res.StatusCode)
+}
+
+func TestSetCorrectCacheControlHeaders(t *testing.T) {
+	assert := assert.New(t)
+	duration, err := time.ParseDuration("30s")
+	assert.NoError(err)
+	CacheControlHeader = fmt.Sprintf("max-age=%s, public", strconv.FormatFloat(duration.Seconds(), 'f', 0, 64))
+	isFound = true
+	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value", nil)
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(err)
+	defer res.Body.Close()
+	assert.EqualValues(200, res.StatusCode)
+	assert.EqualValues(res.Header.Get("Cache-Control"), "max-age=30, public")
 }
