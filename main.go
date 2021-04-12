@@ -88,7 +88,6 @@ func main() {
 }
 
 func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string, batchSize int, log *logger.UPPLogger) {
-
 	if duration, durationErr := time.ParseDuration(cacheDuration); durationErr != nil {
 		log.Fatalf("Failed to parse cache duration string, %v", durationErr)
 	} else {
