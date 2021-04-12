@@ -21,8 +21,10 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
+const serviceName = "public-concordances-api"
+
 func main() {
-	app := cli.App("public-concordances-api", "A public RESTful API for accessing concordances in neo4j")
+	app := cli.App(serviceName, "A public RESTful API for accessing concordances in neo4j")
 
 	appSystemCode := app.String(cli.StringOpt{
 		Name:   "app-system-code",
@@ -139,7 +141,7 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 
 	http.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(concordances.GTG))
-	http.HandleFunc("/__health", fthealth.Handler(concordances.HealthCheck()))
+	http.HandleFunc("/__health", fthealth.Handler(concordances.HealthCheck(serviceName)))
 
 	http.Handle("/", monitoringRouter)
 
