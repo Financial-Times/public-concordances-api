@@ -13,6 +13,7 @@ import (
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/service-status-go/gtg"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
 type HTTPHandler struct {
@@ -107,8 +108,10 @@ func (hh *HTTPHandler) GetConcordances(w http.ResponseWriter, r *http.Request) {
 
 	concordance, _, err := processParams(conceptIDExist, authorityExist, m)
 	if err != nil {
+		transactionID := transactionidutils.GetTransactionIDFromRequest(r)
+		hh.log.WithError(err).WithTransactionID(transactionID).Errorf("Error looking up Concordances")
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		w.Write([]byte(`{"message": "error accessing Concordance datastore"}`))
 		return
 	}
 

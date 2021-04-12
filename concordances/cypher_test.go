@@ -11,15 +11,10 @@ import (
 	"sort"
 
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
-	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	logger.InitDefaultLogger("TestPublicConcordancesAPI")
-}
 
 var concordedBrandSmartlogic = Concordance{
 	Concept{
@@ -510,7 +505,7 @@ func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.Neo
 
 	conf := neoutils.DefaultConnectionConfig()
 	conf.Transactional = false
-	db, err := neoutils.Connect(url, conf)
+	db, err := neoutils.Connect(url, conf, nil)
 	assert.NoError(err, "Failed to connect to Neo4j")
 	return db
 }
