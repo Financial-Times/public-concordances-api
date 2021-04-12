@@ -8,14 +8,15 @@ import (
 	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
-	log "github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/http-handlers-go/httphandlers"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
+	logger "github.com/Financial-Times/go-logger/v2"
+	"github.com/Financial-Times/http-handlers-go/v2/httphandlers"
+	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
+
 	"github.com/Financial-Times/public-concordances-api/concordances"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rcrowley/go-metrics"
 )
@@ -70,12 +71,13 @@ func main() {
 		Desc:   "Max batch size for Neo4j queries",
 		EnvVar: "BATCH_SIZE",
 	})
+
+	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
 	app.Action = func() {
-		log.Infof("public-concordances-api will listen on port: %s, connecting to: %s", *port, *neoURL)
-		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval, *batchSize)
+		log.Infof("service will listen on port: %s, connecting to: %s", *port, *neoURL)
+		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval, *batchSize, log)
 	}
 
-	log.InitLogger(*appSystemCode, *logLevel)
 	log.WithFields(map[string]interface{}{
 		"HEALTHCHECK_INTERVAL": *healthcheckInterval,
 		"CACHE_DURATION":       *cacheDuration,
@@ -85,7 +87,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string, batchSize int) {
+func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string, batchSize int, log *logger.UPPLogger) {
 
 	if duration, durationErr := time.ParseDuration(cacheDuration); durationErr != nil {
 		log.Fatalf("Failed to parse cache duration string, %v", durationErr)
@@ -104,7 +106,7 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 		},
 		BackgroundConnect: true,
 	}
-	db, err := neoutils.Connect(neoURL, &conf)
+	db, err := neoutils.Connect(neoURL, &conf, log)
 	if err != nil {
 		log.Fatalf("Error connecting to neo4j %s", err)
 	}
@@ -127,7 +129,7 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	servicesRouter.Handle("/concordances", mh)
 
 	var monitoringRouter http.Handler = servicesRouter
-	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log.Logger(), monitoringRouter)
+	monitoringRouter = httphandlers.TransactionAwareRequestLoggingHandler(log, monitoringRouter)
 	monitoringRouter = httphandlers.HTTPMetricsHandler(metrics.DefaultRegistry, monitoringRouter)
 
 	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,

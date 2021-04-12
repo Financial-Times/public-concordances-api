@@ -6,9 +6,11 @@ require (
 	github.com/Financial-Times/concepts-rw-neo4j v1.26.0
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger v0.0.0-20180323124113-febee6537e90
-	github.com/Financial-Times/http-handlers-go v0.0.0-20180517120644-2c20324ab887
+	github.com/Financial-Times/go-logger/v2 v2.0.1
+	github.com/Financial-Times/http-handlers-go/v2 v2.3.0
 	github.com/Financial-Times/neo-model-utils-go v1.0.0
 	github.com/Financial-Times/neo-utils-go v0.0.0-20180807105745-1fe6ae2f38f3
+	github.com/Financial-Times/neo-utils-go/v2 v2.0.0
 	github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.1
