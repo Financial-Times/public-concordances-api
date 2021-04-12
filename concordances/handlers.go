@@ -41,11 +41,11 @@ func NewHTTPHandler(log *logger.UPPLogger) *HTTPHandler {
 }
 
 // HealthCheck provides an FT standard timed healthcheck for the /__health endpoint
-func HealthCheck() fthealth.TimedHealthCheck {
+func HealthCheck(serviceName string) fthealth.TimedHealthCheck {
 	return fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
-			SystemCode:  "public-concordances-api",
-			Name:        "public-concordances-api",
+			SystemCode:  serviceName,
+			Name:        serviceName,
 			Description: "Concords concept identifiers",
 			Checks: []fthealth.Check{
 				{
