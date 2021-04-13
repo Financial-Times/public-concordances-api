@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
@@ -17,11 +20,14 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	cli "github.com/jawher/mow.cli"
-	_ "github.com/joho/godotenv/autoload"
 	"github.com/rcrowley/go-metrics"
 )
 
-const serviceName = "public-concordances-api"
+const (
+	serviceName               = "public-concordances-api"
+	dbConnectionTimeout       = 1 * time.Minute
+	maxIdleConnectionsPerHost = 100
+)
 
 func main() {
 	app := cli.App(serviceName, "A public RESTful API for accessing concordances in neo4j")
@@ -72,7 +78,7 @@ func main() {
 	app.Action = func() {
 		cacheControlHeader, err := parseCacheDurationArg(*cacheDuration)
 		if err != nil {
-			log.WithError(err).Fatalf("Appliaction failed to start")
+			log.WithError(err).Fatalf("Application failed to start")
 		}
 
 		conf := neoutils.ConnectionConfig{
@@ -80,9 +86,9 @@ func main() {
 			Transactional: false,
 			HTTPClient: &http.Client{
 				Transport: &http.Transport{
-					MaxIdleConnsPerHost: 100,
+					MaxIdleConnsPerHost: maxIdleConnectionsPerHost,
 				},
-				Timeout: 1 * time.Minute,
+				Timeout: dbConnectionTimeout,
 			},
 			BackgroundConnect: true,
 		}
@@ -92,9 +98,12 @@ func main() {
 		}
 		driver := concordances.NewCypherDriver(db, *env)
 		hh := concordances.NewHTTPHandler(log, driver, cacheControlHeader)
-
-		log.Infof("service will listen on port: %s, connecting to: %s", *port, *neoURL)
-		runServer(*port, hh, log)
+		router := registerEndpoints(hh, log)
+		srv := newHTTPServer(*port, router)
+		go startHTTPServer(srv, log)
+		log.Infof("service will listen on port: %s", *port)
+		waitForSignal()
+		stopHTTPServer(srv, log)
 	}
 
 	log.WithFields(map[string]interface{}{
@@ -105,7 +114,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func runServer(port string, hh *concordances.HTTPHandler, log *logger.UPPLogger) {
+func registerEndpoints(hh *concordances.HTTPHandler, log *logger.UPPLogger) http.Handler {
 	servicesRouter := mux.NewRouter()
 	mh := &handlers.MethodHandler{
 		"GET": http.HandlerFunc(hh.GetConcordances),
@@ -119,17 +128,48 @@ func runServer(port string, hh *concordances.HTTPHandler, log *logger.UPPLogger)
 	// The top one of these feels more correct, but the lower one matches what we have in Dropwizard,
 	// so it's what apps expect currently same as ping, the content of build-info needs more definition
 	//using http router here to be able to catch "/"
-	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
-	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
+	router := http.NewServeMux()
+	router.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
+	router.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 
-	http.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(hh.GTG))
-	http.HandleFunc("/__health", fthealth.Handler(hh.HealthCheck(serviceName)))
+	router.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(hh.GTG))
+	router.HandleFunc("/__health", fthealth.Handler(hh.HealthCheck(serviceName)))
 
-	http.Handle("/", monitoringRouter)
+	router.Handle("/", monitoringRouter)
 
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Unable to start server: %v", err)
+	return router
+}
+
+func newHTTPServer(port string, router http.Handler) *http.Server {
+	return &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
 	}
+}
+
+func startHTTPServer(srv *http.Server, log *logger.UPPLogger) {
+	log.Info("starting http server...")
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("http server failed to start: %s", err)
+	}
+}
+
+func stopHTTPServer(srv *http.Server, log *logger.UPPLogger) {
+	log.Info("http server is shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("failed to gracefully shutdown the server: %v", err)
+	}
+}
+
+func waitForSignal() {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
 }
 
 func parseCacheDurationArg(cacheDuration string) (string, error) {

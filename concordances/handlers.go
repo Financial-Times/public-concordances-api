@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"errors"
 	"strings"
-
-	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	logger "github.com/Financial-Times/go-logger/v2"
@@ -24,6 +23,8 @@ type HTTPHandler struct {
 }
 
 const (
+	healthCheckTimeout = 10 * time.Second
+
 	thingURIPrefix = "http://api.ft.com/things/"
 
 	multipleAuthoritiesNotPermitted          = "multiple authorities are not permitted"
@@ -59,7 +60,7 @@ func (hh *HTTPHandler) HealthCheck(serviceName string) fthealth.TimedHealthCheck
 				},
 			},
 		},
-		Timeout: 10 * time.Second,
+		Timeout: healthCheckTimeout,
 	}
 }
 

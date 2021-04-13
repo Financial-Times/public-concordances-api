@@ -16,7 +16,6 @@ require (
 	github.com/hashicorp/go-version v1.1.0 // indirect
 	github.com/jawher/mow.cli v1.0.5
 	github.com/jmcvetta/neoism v1.3.2
-	github.com/joho/godotenv v1.3.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/sirupsen/logrus v1.4.1 // indirect
