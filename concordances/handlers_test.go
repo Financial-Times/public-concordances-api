@@ -5,9 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
-	"time"
 
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/gorilla/mux"
@@ -15,12 +13,13 @@ import (
 )
 
 var (
-	server          *httptest.Server
-	concordanceURL  string
-	isFound         bool
-	conceptIds      []string
-	authorityValues []string
-	actualAuthority string
+	server             *httptest.Server
+	concordanceURL     string
+	isFound            bool
+	conceptIds         []string
+	authorityValues    []string
+	actualAuthority    string
+	cacheControlHeader string
 )
 
 type mockConcordanceDriver struct{}
@@ -40,9 +39,9 @@ func (driver mockConcordanceDriver) CheckConnectivity() error {
 }
 
 func init() {
-	log := logger.NewUPPLogger("public-concordances-api", "info")
-	hh := NewHTTPHandler(log)
-	ConcordanceDriver = mockConcordanceDriver{}
+	log := logger.NewUPPLogger("public-concordances-api", "panic")
+	cacheControlHeader = "max-age=30, public"
+	hh := NewHTTPHandler(log, mockConcordanceDriver{}, cacheControlHeader)
 	r := mux.NewRouter()
 	r.HandleFunc("/concordances", hh.GetConcordances).Methods("GET")
 	server = httptest.NewServer(r)
@@ -138,16 +137,13 @@ func TestCanNotRequestWithoutAuthorityOrConceptId(t *testing.T) {
 	assert.EqualValues(400, res.StatusCode)
 }
 
-func TestSetCorrectCacheControlHeaders(t *testing.T) {
+func TestCorrectCacheControlHeadersAreSet(t *testing.T) {
 	assert := assert.New(t)
-	duration, err := time.ParseDuration("30s")
-	assert.NoError(err)
-	CacheControlHeader = fmt.Sprintf("max-age=%s, public", strconv.FormatFloat(duration.Seconds(), 'f', 0, 64))
 	isFound = true
 	req, _ := http.NewRequest("GET", concordanceURL+"?authority=some-authority&identifierValue=some-value", nil)
 	res, err := http.DefaultClient.Do(req)
 	assert.NoError(err)
 	defer res.Body.Close()
 	assert.EqualValues(200, res.StatusCode)
-	assert.EqualValues(res.Header.Get("Cache-Control"), "max-age=30, public")
+	assert.EqualValues(res.Header.Get("Cache-Control"), cacheControlHeader)
 }

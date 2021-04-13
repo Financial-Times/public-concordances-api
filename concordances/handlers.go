@@ -18,7 +18,9 @@ import (
 )
 
 type HTTPHandler struct {
-	log *logger.UPPLogger
+	log                *logger.UPPLogger
+	concordanceDriver  Driver
+	cacheControlHeader string
 }
 
 const (
@@ -31,17 +33,16 @@ const (
 	errAccessingConcordanceDatastore         = "error accessing Concordance datastore"
 )
 
-// ConcordanceDriver for cypher queries
-var ConcordanceDriver Driver
-var CacheControlHeader string
-var connCheck error
-
-func NewHTTPHandler(log *logger.UPPLogger) *HTTPHandler {
-	return &HTTPHandler{log: log}
+func NewHTTPHandler(log *logger.UPPLogger, driver Driver, cacheControlHeader string) *HTTPHandler {
+	return &HTTPHandler{
+		log:                log,
+		concordanceDriver:  driver,
+		cacheControlHeader: cacheControlHeader,
+	}
 }
 
 // HealthCheck provides an FT standard timed healthcheck for the /__health endpoint
-func HealthCheck(serviceName string) fthealth.TimedHealthCheck {
+func (hh *HTTPHandler) HealthCheck(serviceName string) fthealth.TimedHealthCheck {
 	return fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
 			SystemCode:  serviceName,
@@ -54,7 +55,7 @@ func HealthCheck(serviceName string) fthealth.TimedHealthCheck {
 					PanicGuide:       "https://runbooks.ftops.tech/public-concordances-api",
 					Severity:         1,
 					TechnicalSummary: "Cannot connect to Neo4j a instance with at least one concordance loaded in it",
-					Checker:          Checker,
+					Checker:          hh.databaseConnectivityChecker,
 				},
 			},
 		},
@@ -62,17 +63,8 @@ func HealthCheck(serviceName string) fthealth.TimedHealthCheck {
 	}
 }
 
-func StartAsyncChecker(checkInterval time.Duration) {
-	go func(checkInterval time.Duration) {
-		ticker := time.NewTicker(checkInterval)
-		for range ticker.C {
-			connCheck = ConcordanceDriver.CheckConnectivity()
-		}
-	}(checkInterval)
-}
-
-// Checker does more stuff
-func Checker() (string, error) {
+func (hh *HTTPHandler) databaseConnectivityChecker() (string, error) {
+	connCheck := hh.concordanceDriver.CheckConnectivity()
 	if connCheck == nil {
 		return "Connectivity to neo4j is ok", connCheck
 	}
@@ -80,8 +72,8 @@ func Checker() (string, error) {
 }
 
 // GTG lightly checks the application and conforms to the FT standard GTG format
-func GTG() gtg.Status {
-	if _, err := Checker(); err != nil {
+func (hh *HTTPHandler) GTG() gtg.Status {
+	if _, err := hh.databaseConnectivityChecker(); err != nil {
 		return gtg.Status{GoodToGo: false, Message: err.Error()}
 	}
 	return gtg.Status{GoodToGo: true}
@@ -122,7 +114,7 @@ func (hh *HTTPHandler) GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	concordance, _, err := processParams(conceptIDExist, authorityExist, m)
+	concordance, _, err := hh.processParams(conceptIDExist, authorityExist, m)
 	if err != nil {
 		logEntry.WithError(err).Errorf("error looking up Concordances")
 		err := writeErrorResponse(w, http.StatusInternalServerError, errAccessingConcordanceDatastore)
@@ -132,12 +124,12 @@ func (hh *HTTPHandler) GetConcordances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Cache-Control", CacheControlHeader)
+	w.Header().Set("Cache-Control", hh.cacheControlHeader)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(concordance)
 }
 
-func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
+func (hh *HTTPHandler) processParams(conceptIDExist bool, authorityExist bool, m url.Values) (concordances Concordances, found bool, err error) {
 	if conceptIDExist {
 		conceptUuids := []string{}
 
@@ -145,11 +137,11 @@ func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (conc
 			conceptUuids = append(conceptUuids, strings.TrimPrefix(uri, thingURIPrefix))
 		}
 
-		return ConcordanceDriver.ReadByConceptID(conceptUuids)
+		return hh.concordanceDriver.ReadByConceptID(conceptUuids)
 	}
 
 	if authorityExist {
-		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
+		return hh.concordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
 	}
 
 	return Concordances{}, false, errors.New(neitherConceptIDNorAuthorityPresent)
