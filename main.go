@@ -61,12 +61,6 @@ func main() {
 		Desc:   "Log level of the app",
 		EnvVar: "LOG_LEVEL",
 	})
-	healthcheckInterval := app.String(cli.StringOpt{
-		Name:   "healthcheck-interval",
-		Value:  "30s",
-		Desc:   "How often the Neo4j healthcheck is called.",
-		EnvVar: "HEALTHCHECK_INTERVAL",
-	})
 	batchSize := app.Int(cli.IntOpt{
 		Name:   "batch-size",
 		Value:  0,
@@ -76,55 +70,43 @@ func main() {
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
 	app.Action = func() {
+		cacheControlHeader, err := parseCacheDurationArg(*cacheDuration)
+		if err != nil {
+			log.WithError(err).Fatalf("Appliaction failed to start")
+		}
+
+		conf := neoutils.ConnectionConfig{
+			BatchSize:     *batchSize,
+			Transactional: false,
+			HTTPClient: &http.Client{
+				Transport: &http.Transport{
+					MaxIdleConnsPerHost: 100,
+				},
+				Timeout: 1 * time.Minute,
+			},
+			BackgroundConnect: true,
+		}
+		db, err := neoutils.Connect(*neoURL, &conf, log)
+		if err != nil {
+			log.WithError(err).Fatalf("Application failed to connect to neo4j")
+		}
+		driver := concordances.NewCypherDriver(db, *env)
+		hh := concordances.NewHTTPHandler(log, driver, cacheControlHeader)
+
 		log.Infof("service will listen on port: %s, connecting to: %s", *port, *neoURL)
-		runServer(*neoURL, *port, *cacheDuration, *env, *healthcheckInterval, *batchSize, log)
+		runServer(*port, hh, log)
 	}
 
 	log.WithFields(map[string]interface{}{
-		"HEALTHCHECK_INTERVAL": *healthcheckInterval,
-		"CACHE_DURATION":       *cacheDuration,
-		"NEO_URL":              *neoURL,
-		"LOG_LEVEL":            *logLevel,
+		"CACHE_DURATION": *cacheDuration,
+		"NEO_URL":        *neoURL,
+		"LOG_LEVEL":      *logLevel,
 	}).Info("Starting app with arguments")
 	app.Run(os.Args)
 }
 
-func runServer(neoURL string, port string, cacheDuration string, env string, healthcheckInterval string, batchSize int, log *logger.UPPLogger) {
-	if duration, durationErr := time.ParseDuration(cacheDuration); durationErr != nil {
-		log.Fatalf("Failed to parse cache duration string, %v", durationErr)
-	} else {
-		concordances.CacheControlHeader = fmt.Sprintf("max-age=%s, public", strconv.FormatFloat(duration.Seconds(), 'f', 0, 64))
-	}
-
-	conf := neoutils.ConnectionConfig{
-		BatchSize:     batchSize,
-		Transactional: false,
-		HTTPClient: &http.Client{
-			Transport: &http.Transport{
-				MaxIdleConnsPerHost: 100,
-			},
-			Timeout: 1 * time.Minute,
-		},
-		BackgroundConnect: true,
-	}
-	db, err := neoutils.Connect(neoURL, &conf, log)
-	if err != nil {
-		log.Fatalf("Error connecting to neo4j %s", err)
-	}
-
-	concordances.ConcordanceDriver = concordances.NewCypherDriver(db, env)
-
-	checkInterval, err := time.ParseDuration(healthcheckInterval)
-	if err != nil {
-		checkInterval = time.Second * 30
-	}
-	concordances.StartAsyncChecker(checkInterval)
-
+func runServer(port string, hh *concordances.HTTPHandler, log *logger.UPPLogger) {
 	servicesRouter := mux.NewRouter()
-
-	// Then API specific ones:
-
-	hh := concordances.NewHTTPHandler(log)
 	mh := &handlers.MethodHandler{
 		"GET": http.HandlerFunc(hh.GetConcordances),
 	}
@@ -140,13 +122,22 @@ func runServer(neoURL string, port string, cacheDuration string, env string, hea
 	http.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	http.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 
-	http.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(concordances.GTG))
-	http.HandleFunc("/__health", fthealth.Handler(concordances.HealthCheck(serviceName)))
+	http.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(hh.GTG))
+	http.HandleFunc("/__health", fthealth.Handler(hh.HealthCheck(serviceName)))
 
 	http.Handle("/", monitoringRouter)
 
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("Unable to start server: %v", err)
 	}
+}
 
+func parseCacheDurationArg(cacheDuration string) (string, error) {
+	duration, err := time.ParseDuration(cacheDuration)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse cache duration string, %v", err)
+	}
+
+	cacheDurationHeader := fmt.Sprintf("max-age=%s, public", strconv.FormatFloat(duration.Seconds(), 'f', 0, 64))
+	return cacheDurationHeader, nil
 }
