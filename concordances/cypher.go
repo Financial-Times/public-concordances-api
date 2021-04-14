@@ -3,9 +3,8 @@ package concordances
 import (
 	"fmt"
 
-	log "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
-	"github.com/Financial-Times/neo-utils-go/neoutils"
+	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
 	"github.com/jmcvetta/neoism"
 )
 
@@ -76,8 +75,7 @@ func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Conc
 
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
-		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for identifier: %v", identifiers)
+		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for identifier %v: %w", identifiers, err)
 	}
 
 	if (len(results)) == 0 {
@@ -174,8 +172,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
 	if err != nil {
-		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", query.Statement, err)
-		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for identifier: %v", identifierValues)
+		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for authorityValue %v: %w", identifierValues, err)
 	}
 
 	if (len(results)) == 0 {
@@ -192,8 +189,7 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results []neoReadStruct) (concordances Concordances, found bool, err error) {
 	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{q})
 	if err != nil {
-		log.Errorf("Error looking up Concordances with query %s from neoism: %+v\n", q.Statement, err)
-		return Concordances{}, false, fmt.Errorf("Error accessing Concordance datastore")
+		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore: %w", err)
 	}
 
 	concordances = neoReadStructToConcordances(results, pcw.env)
@@ -216,7 +212,6 @@ func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances 
 		concept.APIURL = mapper.APIURL(neoCon.CanonicalUUID, neoCon.Types, env)
 		authorityURI, found := AuthorityToURI(neoCon.Authority)
 		if !found {
-			log.Debugf("Unsupported authority: %s", neoCon.Authority)
 			continue
 		}
 		con.Identifier = Identifier{Authority: authorityURI, IdentifierValue: neoCon.AuthorityValue}

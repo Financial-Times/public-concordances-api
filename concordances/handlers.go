@@ -2,6 +2,7 @@ package concordances
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -11,8 +12,23 @@ import (
 	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/service-status-go/gtg"
-	log "github.com/sirupsen/logrus"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
+)
+
+type HTTPHandler struct {
+	log *logger.UPPLogger
+}
+
+const (
+	thingURIPrefix = "http://api.ft.com/things/"
+
+	multipleAuthoritiesNotPermitted          = "multiple authorities are not permitted"
+	conceptAndAuthorityCannotBeBothPresent   = "if conceptId is present then authority is not a valid parameter"
+	authorityIsMandatoryIfConceptIDIsMissing = "if conceptId is absent then authority is mandatory"
+	neitherConceptIDNorAuthorityPresent      = "neither conceptId nor authority were present"
+	errAccessingConcordanceDatastore         = "error accessing Concordance datastore"
 )
 
 // ConcordanceDriver for cypher queries
@@ -20,12 +36,16 @@ var ConcordanceDriver Driver
 var CacheControlHeader string
 var connCheck error
 
+func NewHTTPHandler(log *logger.UPPLogger) *HTTPHandler {
+	return &HTTPHandler{log: log}
+}
+
 // HealthCheck provides an FT standard timed healthcheck for the /__health endpoint
-func HealthCheck() fthealth.TimedHealthCheck {
+func HealthCheck(serviceName string) fthealth.TimedHealthCheck {
 	return fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
-			SystemCode:  "public-concordances-api",
-			Name:        "public-concordances-api",
+			SystemCode:  serviceName,
+			Name:        serviceName,
 			Description: "Concords concept identifiers",
 			Checks: []fthealth.Check{
 				{
@@ -68,9 +88,10 @@ func GTG() gtg.Status {
 }
 
 // GetConcordances is the public API
-func GetConcordances(w http.ResponseWriter, r *http.Request) {
-
-	log.Debugf("Concordance request: %s", r.URL.RawQuery)
+func (hh *HTTPHandler) GetConcordances(w http.ResponseWriter, r *http.Request) {
+	tid := transactionidutils.GetTransactionIDFromRequest(r)
+	logEntry := hh.log.WithTransactionID(tid)
+	logEntry.Debugf("Concordance request: %s", r.URL.RawQuery)
 	m, _ := url.ParseQuery(r.URL.RawQuery)
 
 	_, conceptIDExist := m["conceptId"]
@@ -78,35 +99,39 @@ func GetConcordances(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	if conceptIDExist && authorityExist {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(
-			`{"message": "` + conceptAndAuthorityCannotBeBothPresent + `"}`))
+		err := writeErrorResponse(w, http.StatusBadRequest, conceptAndAuthorityCannotBeBothPresent)
+		if err != nil {
+			logEntry.WithError(err).Errorf("cannot write response message: %s", conceptAndAuthorityCannotBeBothPresent)
+		}
 		return
 	}
 
 	if !conceptIDExist && !authorityExist {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(
-			`{"message": "` + authorityIsMandatoryIfConceptIdIsMissing + `"}`))
+		err := writeErrorResponse(w, http.StatusBadRequest, authorityIsMandatoryIfConceptIDIsMissing)
+		if err != nil {
+			logEntry.WithError(err).Errorf("cannot write response message: %s", authorityIsMandatoryIfConceptIDIsMissing)
+		}
 		return
 	}
 
 	if len(m["authority"]) > 1 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(
-			`{"message": "` + multipleAuthoritiesNotPermitted + `"}`))
+		err := writeErrorResponse(w, http.StatusBadRequest, multipleAuthoritiesNotPermitted)
+		if err != nil {
+			logEntry.WithError(err).Errorf("cannot write response message: %s", multipleAuthoritiesNotPermitted)
+		}
 		return
 	}
 
 	concordance, _, err := processParams(conceptIDExist, authorityExist, m)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "` + err.Error() + `"}`))
+		logEntry.WithError(err).Errorf("error looking up Concordances")
+		err := writeErrorResponse(w, http.StatusInternalServerError, errAccessingConcordanceDatastore)
+		if err != nil {
+			logEntry.WithError(err).Errorf("cannot write response message: %s", errAccessingConcordanceDatastore)
+		}
 		return
 	}
 
-	Jason, _ := json.Marshal(concordance)
-	log.Debugf("Concordance(uuid:%s): %s\n", Jason, Jason)
 	w.Header().Set("Cache-Control", CacheControlHeader)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(concordance)
@@ -127,14 +152,16 @@ func processParams(conceptIDExist bool, authorityExist bool, m url.Values) (conc
 		return ConcordanceDriver.ReadByAuthority(m.Get("authority"), m["identifierValue"])
 	}
 
-	return Concordances{}, false, errors.New(neitherConceptIdNorAuthorityPresent)
+	return Concordances{}, false, errors.New(neitherConceptIDNorAuthorityPresent)
 }
 
-const (
-	thingURIPrefix = "http://api.ft.com/things/"
+func writeErrorResponse(w http.ResponseWriter, statusCode int, msg string) error {
+	w.WriteHeader(statusCode)
 
-	multipleAuthoritiesNotPermitted          = "Multiple authorities are not permitted"
-	conceptAndAuthorityCannotBeBothPresent   = "If conceptId is present then authority is not a valid parameter"
-	authorityIsMandatoryIfConceptIdIsMissing = "If conceptId is absent then authority is mandatory"
-	neitherConceptIdNorAuthorityPresent      = "Neither conceptId nor authority were present"
-)
+	payload := []byte(`{"message": "` + msg + `"}`)
+	if _, err := w.Write(payload); err != nil {
+		return fmt.Errorf("error while writing response message: %w", err)
+	}
+
+	return nil
+}
