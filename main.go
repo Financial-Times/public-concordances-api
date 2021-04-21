@@ -15,6 +15,7 @@ import (
 	"github.com/Financial-Times/http-handlers-go/v2/httphandlers"
 	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
 
+	"github.com/Financial-Times/api-endpoint"
 	"github.com/Financial-Times/public-concordances-api/concordances"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/handlers"
@@ -73,6 +74,12 @@ func main() {
 		Desc:   "Max batch size for Neo4j queries",
 		EnvVar: "BATCH_SIZE",
 	})
+	apiYml := app.String(cli.StringOpt{
+		Name:   "api-yml",
+		Value:  "./api.yml",
+		Desc:   "Location of the API Swagger YML file.",
+		EnvVar: "API_YML",
+	})
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
 	app.Action = func() {
@@ -98,7 +105,7 @@ func main() {
 		}
 		driver := concordances.NewCypherDriver(db, *env)
 		hh := concordances.NewHTTPHandler(log, driver, cacheControlHeader)
-		router := registerEndpoints(hh, log)
+		router := registerEndpoints(hh, log, apiYml)
 		srv := newHTTPServer(*port, router)
 		go startHTTPServer(srv, log)
 		log.Infof("service will listen on port: %s", *port)
@@ -114,7 +121,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func registerEndpoints(hh *concordances.HTTPHandler, log *logger.UPPLogger) http.Handler {
+func registerEndpoints(hh *concordances.HTTPHandler, log *logger.UPPLogger, apiYml *string) http.Handler {
 	servicesRouter := mux.NewRouter()
 	mh := &handlers.MethodHandler{
 		"GET": http.HandlerFunc(hh.GetConcordances),
@@ -136,6 +143,14 @@ func registerEndpoints(hh *concordances.HTTPHandler, log *logger.UPPLogger) http
 	router.HandleFunc("/__health", fthealth.Handler(hh.HealthCheck(serviceName)))
 
 	router.Handle("/", monitoringRouter)
+	if apiYml != nil {
+		endpoint, err := api.NewAPIEndpointForFile(*apiYml)
+		if err != nil {
+			log.WithError(err).WithField("file", apiYml).Warn("Failed to serve the API Endpoint for this service. Please validate the Swagger YML and the file location.")
+		} else {
+			servicesRouter.HandleFunc(api.DefaultPath, endpoint.ServeHTTP).Methods("GET")
+		}
+	}
 
 	return router
 }
