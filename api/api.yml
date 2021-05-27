@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Public Concordances API
-  description: Provides a public API for Concordances stored in the Neo4j graph database
+  description: Provides a public API for concordances stored in the Neo4j graph database
   version: v1.4.2
   contact:
     name: Universal Publishing
@@ -9,6 +9,8 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+security:
+  - ApiKeyAuth: []
 paths:
   "/concordances":
     get:
@@ -115,9 +117,14 @@ paths:
         "503":
           description: Service Unavailable if it cannot connect to Neo4j.
   /__health:
+    servers:
+      - url: https://upp-prod-delivery-glb.upp.ft.com/__public-concordances-api/
+      - url: https://upp-staging-delivery-glb.upp.ft.com/__public-concordances-api/
     get:
       summary: Healthchecks
-      description: Runs application healthchecks and returns FT Healthcheck style json.
+      description: Runs application healthchecks and returns FT healthcheck style JSON.
+      security:
+        - BasicAuth: []
       tags:
         - Health
       responses:
@@ -127,20 +134,30 @@ paths:
             the overall `ok` property to see whether or not the application is
             healthy.
   /__build-info:
+    servers:
+      - url: https://upp-prod-delivery-glb.upp.ft.com/__public-concordances-api/
+      - url: https://upp-staging-delivery-glb.upp.ft.com/__public-concordances-api/
     get:
       summary: Build Information
       description: Returns application build info, such as the git repository and revision,
         the golang version it was built with, and the app release version.
+      security:
+        - BasicAuth: []
       tags:
         - Info
       responses:
         "200":
           description: Outputs build information as described in the summary.
   /__gtg:
+    servers:
+      - url: https://upp-prod-delivery-glb.upp.ft.com/__public-concordances-api/
+      - url: https://upp-staging-delivery-glb.upp.ft.com/__public-concordances-api/
     get:
       summary: Good To Go
       description: Lightly healthchecks the application, and returns a 200 if it's
         Good-To-Go.
+      security:
+        - BasicAuth: []
       tags:
         - Health
       responses:
@@ -151,5 +168,34 @@ paths:
           description: One or more of the applications healthchecks have failed, so please
             do not use the app. See the /__health endpoint for more detailed
             information.
+
+  /__api:
+    servers:
+      - url: https://upp-prod-delivery-glb.upp.ft.com/__public-concordances-api/
+      - url: https://upp-staging-delivery-glb.upp.ft.com/__public-concordances-api/
+    get:
+      security:
+        - BasicAuth: []
+      summary: API Documentation
+      description: Returns OpenAPI documentation for the application.
+      tags:
+        - Info
+      responses:
+        "200":
+          description: Returns OpenAPI information.
+          content:
+            text/plain;charset=utf-8:
+              schema:
+                type: string
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+    BasicAuth:
+      type: http
+      scheme: basic
 servers:
   - url: https://api.ft.com/
+  - url: https://api-t.ft.com/

@@ -3,6 +3,7 @@ module github.com/Financial-Times/public-concordances-api
 go 1.15
 
 require (
+	github.com/Financial-Times/api-endpoint v1.0.0
 	github.com/Financial-Times/concepts-rw-neo4j v1.26.0
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger/v2 v2.0.1
@@ -13,7 +14,6 @@ require (
 	github.com/Financial-Times/transactionid-utils-go v0.2.0
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.1
-	github.com/hashicorp/go-version v1.1.0 // indirect
 	github.com/jawher/mow.cli v1.0.5
 	github.com/jmcvetta/neoism v1.3.2
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
