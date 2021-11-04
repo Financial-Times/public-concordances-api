@@ -534,7 +534,7 @@ func cleanUp(assert *assert.Assertions, driver *cmneo4j.Driver) {
 	for _, uuid := range uuids {
 		query := &cmneo4j.Query{
 			Cypher: `
-				MATCH (canonical:Concept{prefUUID:{uuid}})--(source)
+				MATCH (canonical:Concept{prefUUID:$uuid})--(source)
 				OPTIONAL MATCH (source)<-[:IDENTIFIES]-(identifier)
 				DETACH DELETE canonical, source, identifier`,
 			Params: map[string]interface{}{"uuid": uuid},
@@ -549,7 +549,7 @@ func cleanUp(assert *assert.Assertions, driver *cmneo4j.Driver) {
 	for _, uuid := range uuids {
 		query := &cmneo4j.Query{
 			Cypher: `
-				MATCH (source:Thing{uuid:{uuid}})
+				MATCH (source:Thing{uuid:$uuid})
 				OPTIONAL MATCH (source)<-[:IDENTIFIES]-(identifier)
 				DETACH DELETE source, identifier`,
 			Params: map[string]interface{}{"uuid": uuid},

@@ -74,7 +74,7 @@ func (cd CypherDriver) ReadByConceptID(identifiers []string) (concordances Conco
 	}
 
 	err = cd.driver.Read(query)
-	if errors.As(err, cmneo4j.ErrNoResultsFound) {
+	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
 		return Concordances{}, false, nil
 	}
 	if err != nil {
@@ -104,7 +104,7 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 		query = &cmneo4j.Query{
 			Cypher: `
 		MATCH (p:Thing)
-		WHERE p.uuid IN {authorityValue}
+		WHERE p.uuid IN $authorityValue
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'UPP' as authority, p.uuid as authorityValue`,
 
@@ -118,7 +118,7 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 		query = &cmneo4j.Query{
 			Cypher: `
 		MATCH (p:Concept)
-		WHERE p.leiCode IN {authorityValue}
+		WHERE p.leiCode IN $authorityValue
 		AND exists(p.prefUUID)
 		RETURN DISTINCT p.prefUUID AS canonicalUUID, labels(p) AS types, p.uuid as UUID, 'LEI' as authority, p.leiCode as authorityValue`,
 
@@ -131,7 +131,7 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 		query = &cmneo4j.Query{
 			Cypher: `
 		MATCH (canonical:Location)
-		WHERE canonical.iso31661 IN {authorityValue}
+		WHERE canonical.iso31661 IN $authorityValue
 		AND exists(canonical.prefUUID)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 			`,
@@ -144,7 +144,7 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 		query = &cmneo4j.Query{
 			Cypher: `
 		MATCH (canonical:NAICSIndustryClassification)
-		WHERE canonical.industryIdentifier IN {authorityValue}
+		WHERE canonical.industryIdentifier IN $authorityValue
 		AND exists(canonical.prefUUID)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'NAICS' as authority, canonical.industryIdentifier as authorityValue
 			`,
@@ -157,7 +157,7 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 		query = &cmneo4j.Query{
 			Cypher: `
 		MATCH (p:Thing)
-		WHERE p.authority = {authority} AND p.authorityValue IN {authorityValue}
+		WHERE p.authority = $authority AND p.authorityValue IN $authorityValue
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, p.authority as authority, p.authorityValue as authorityValue`,
 
