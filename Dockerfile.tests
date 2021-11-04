@@ -12,7 +12,7 @@ RUN echo "Fetching dependencies..." \
   && git config --global url."https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com" \
   && git clone https://github.com/vishnubob/wait-for-it.git \
   && cd wait-for-it \
-  && mv ./wait-for-it.sh /${PROJECT}
+  && mv ./wait-for-it.sh /${PROJECT} \
   && go env -w GOPRIVATE=github.com/Financial-Times
 
-ENTRYPOINT ["./wait-for-it.sh", "neo4j:7475", "-t", "60", "--"]
+ENTRYPOINT ["./wait-for-it.sh", "neo4j:7474", "-t", "60", "--"]

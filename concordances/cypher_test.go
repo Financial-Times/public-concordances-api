@@ -502,7 +502,7 @@ func sortConcordances(concordanceList []Concordance) {
 func getNeoDriver(assert *assert.Assertions) *cmneo4j.Driver {
 	url := os.Getenv("NEO4J_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "bolt://localhost:7687"
 	}
 	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
 	driver, err := cmneo4j.NewDefaultDriver(url, log)
