@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	logger "github.com/Financial-Times/go-logger/v2"
 	"github.com/Financial-Times/http-handlers-go/v2/httphandlers"
-	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
 
 	"github.com/Financial-Times/api-endpoint"
 	"github.com/Financial-Times/public-concordances-api/concordances"
@@ -25,9 +25,7 @@ import (
 )
 
 const (
-	serviceName               = "public-concordances-api"
-	dbConnectionTimeout       = 1 * time.Minute
-	maxIdleConnectionsPerHost = 100
+	serviceName = "public-concordances-api"
 )
 
 func main() {
@@ -41,8 +39,8 @@ func main() {
 	})
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
-		Value:  "http://localhost:7474/db/data",
-		Desc:   "neo4j endpoint URL",
+		Value:  "bolt://localhost:7687",
+		Desc:   "neoURL must point to a leader node or use neo4j:// scheme, otherwise writes will fail",
 		EnvVar: "NEO_URL",
 	})
 	port := app.String(cli.StringOpt{
@@ -68,12 +66,6 @@ func main() {
 		Desc:   "Log level of the app",
 		EnvVar: "LOG_LEVEL",
 	})
-	batchSize := app.Int(cli.IntOpt{
-		Name:   "batch-size",
-		Value:  0,
-		Desc:   "Max batch size for Neo4j queries",
-		EnvVar: "BATCH_SIZE",
-	})
 	apiYml := app.String(cli.StringOpt{
 		Name:   "api-yml",
 		Value:  "./api.yml",
@@ -82,29 +74,26 @@ func main() {
 	})
 
 	log := logger.NewUPPLogger(*appSystemCode, *logLevel)
+	log.WithFields(map[string]interface{}{
+		"CACHE_DURATION": *cacheDuration,
+		"NEO_URL":        *neoURL,
+		"LOG_LEVEL":      *logLevel,
+	}).Info("Starting app with arguments")
+
 	app.Action = func() {
 		cacheControlHeader, err := parseCacheDurationArg(*cacheDuration)
 		if err != nil {
 			log.WithError(err).Fatalf("Application failed to start")
 		}
 
-		conf := neoutils.ConnectionConfig{
-			BatchSize:     *batchSize,
-			Transactional: false,
-			HTTPClient: &http.Client{
-				Transport: &http.Transport{
-					MaxIdleConnsPerHost: maxIdleConnectionsPerHost,
-				},
-				Timeout: dbConnectionTimeout,
-			},
-			BackgroundConnect: true,
-		}
-		db, err := neoutils.Connect(*neoURL, &conf, log)
+		driver, err := cmneo4j.NewDefaultDriver(*neoURL, log)
 		if err != nil {
-			log.WithError(err).Fatalf("Application failed to connect to neo4j")
+			log.WithError(err).Fatal("Unable to create a new cmneo4j driver")
 		}
-		driver := concordances.NewCypherDriver(db, *env)
-		hh := concordances.NewHTTPHandler(log, driver, cacheControlHeader)
+		defer driver.Close()
+
+		concordancesDriver := concordances.NewCypherDriver(driver, *env)
+		hh := concordances.NewHTTPHandler(log, concordancesDriver, cacheControlHeader)
 		router := registerEndpoints(hh, log, apiYml)
 		srv := newHTTPServer(*port, router)
 		go startHTTPServer(srv, log)
@@ -113,11 +102,6 @@ func main() {
 		stopHTTPServer(srv, log)
 	}
 
-	log.WithFields(map[string]interface{}{
-		"CACHE_DURATION": *cacheDuration,
-		"NEO_URL":        *neoURL,
-		"LOG_LEVEL":      *logLevel,
-	}).Info("Starting app with arguments")
 	app.Run(os.Args)
 }
 

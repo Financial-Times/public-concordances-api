@@ -1,11 +1,11 @@
 package concordances
 
 import (
+	"errors"
 	"fmt"
 
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/neo-model-utils-go/mapper"
-	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
-	"github.com/jmcvetta/neoism"
 )
 
 // Driver interface
@@ -17,80 +17,79 @@ type Driver interface {
 
 // CypherDriver struct
 type CypherDriver struct {
-	conn neoutils.NeoConnection
-	env  string
+	driver *cmneo4j.Driver
+	env    string
 }
 
 //NewCypherDriver instantiate driver
-func NewCypherDriver(conn neoutils.NeoConnection, env string) CypherDriver {
-	return CypherDriver{conn, env}
+func NewCypherDriver(driver *cmneo4j.Driver, env string) CypherDriver {
+	return CypherDriver{driver, env}
 }
 
 // CheckConnectivity tests neo4j by running a simple cypher query
-func (pcw CypherDriver) CheckConnectivity() error {
-	return neoutils.Check(pcw.conn)
+func (cd CypherDriver) CheckConnectivity() error {
+	return cd.driver.VerifyConnectivity()
 }
 
-func (pcw CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
+func (cd CypherDriver) ReadByConceptID(identifiers []string) (concordances Concordances, found bool, err error) {
 	var results []neoReadStruct
-	query := &neoism.CypherQuery{
-		Statement: `
+	query := &cmneo4j.Query{
+		Cypher: `
 		MATCH (p:Thing)
-		WHERE p.uuid in {identifiers}
+		WHERE p.uuid in $identifiers
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Thing)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, leafNode.authority as authority, leafNode.authorityValue as authorityValue
 		UNION ALL
 
 		MATCH (p:Thing)
-		WHERE p.uuid in {identifiers}
+		WHERE p.uuid in $identifiers
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.leiCode)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'LEI' as authority, canonical.leiCode as authorityValue
 		UNION ALL
 
 		MATCH (p:Location)
-		WHERE p.uuid in {identifiers}
+		WHERE p.uuid in $identifiers
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.iso31661)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 		UNION ALL
 
 		MATCH (p:NAICSIndustryClassification)
-		WHERE p.uuid in {identifiers}
+		WHERE p.uuid in $identifiers
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.industryIdentifier)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'NAICS' as authority, canonical.industryIdentifier as authorityValue
 		UNION ALL
 
 		MATCH (p:Thing)
-		WHERE p.uuid in {identifiers}
+		WHERE p.uuid in $identifiers
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		MATCH (canonical)<-[:EQUIVALENT_TO]-(leafNode:Thing)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'UPP' as authority, leafNode.uuid as authorityValue
         `,
-		Parameters: neoism.Props{"identifiers": identifiers},
-		Result:     &results,
+		Params: map[string]interface{}{"identifiers": identifiers},
+		Result: &results,
 	}
 
-	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err = cd.driver.Read(query)
+	if errors.As(err, cmneo4j.ErrNoResultsFound) {
+		return Concordances{}, false, nil
+	}
 	if err != nil {
 		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for identifier %v: %w", identifiers, err)
-	}
-
-	if (len(results)) == 0 {
-		return Concordances{}, false, nil
 	}
 
 	concordances = Concordances{
 		Concordance: []Concordance{},
 	}
 
-	return processCypherQueryToConcordances(pcw, query, results)
+	return processCypherQueryToConcordances(cd, query, results)
 
 }
 
-func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
+func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []string) (concordances Concordances, found bool, err error) {
 	var results []neoReadStruct
 
 	authorityProperty, found := AuthorityFromURI(authority)
@@ -98,71 +97,71 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		return Concordances{}, false, nil
 	}
 
-	var query *neoism.CypherQuery
+	var query *cmneo4j.Query
 
 	if authorityProperty == "UPP" {
 		// We need to treat the UPP authority slightly different as it's stored elsewhere.
-		query = &neoism.CypherQuery{
-			Statement: `
+		query = &cmneo4j.Query{
+			Cypher: `
 		MATCH (p:Thing)
 		WHERE p.uuid IN {authorityValue}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, 'UPP' as authority, p.uuid as authorityValue`,
 
-			Parameters: neoism.Props{
+			Params: map[string]interface{}{
 				"authorityValue": identifierValues,
 			},
 			Result: &results,
 		}
 	} else if authorityProperty == "LEI" {
 		// We've gotta treat LEI special like as well.
-		query = &neoism.CypherQuery{
-			Statement: `
+		query = &cmneo4j.Query{
+			Cypher: `
 		MATCH (p:Concept)
 		WHERE p.leiCode IN {authorityValue}
 		AND exists(p.prefUUID)
 		RETURN DISTINCT p.prefUUID AS canonicalUUID, labels(p) AS types, p.uuid as UUID, 'LEI' as authority, p.leiCode as authorityValue`,
 
-			Parameters: neoism.Props{
+			Params: map[string]interface{}{
 				"authorityValue": identifierValues,
 			},
 			Result: &results,
 		}
 	} else if authorityProperty == "ISO-3166-1" {
-		query = &neoism.CypherQuery{
-			Statement: `
+		query = &cmneo4j.Query{
+			Cypher: `
 		MATCH (canonical:Location)
 		WHERE canonical.iso31661 IN {authorityValue}
 		AND exists(canonical.prefUUID)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'ISO-3166-1' as authority, canonical.iso31661 as authorityValue
 			`,
-			Parameters: neoism.Props{
+			Params: map[string]interface{}{
 				"authorityValue": identifierValues,
 			},
 			Result: &results,
 		}
 	} else if authorityProperty == "NAICS" {
-		query = &neoism.CypherQuery{
-			Statement: `
+		query = &cmneo4j.Query{
+			Cypher: `
 		MATCH (canonical:NAICSIndustryClassification)
 		WHERE canonical.industryIdentifier IN {authorityValue}
 		AND exists(canonical.prefUUID)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'NAICS' as authority, canonical.industryIdentifier as authorityValue
 			`,
-			Parameters: neoism.Props{
+			Params: map[string]interface{}{
 				"authorityValue": identifierValues,
 			},
 			Result: &results,
 		}
 	} else {
-		query = &neoism.CypherQuery{
-			Statement: `
+		query = &cmneo4j.Query{
+			Cypher: `
 		MATCH (p:Thing)
 		WHERE p.authority = {authority} AND p.authorityValue IN {authorityValue}
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, p.uuid as UUID, p.authority as authority, p.authorityValue as authorityValue`,
 
-			Parameters: neoism.Props{
+			Params: map[string]interface{}{
 				"authorityValue": identifierValues,
 				"authority":      authorityProperty,
 			},
@@ -170,31 +169,30 @@ func (pcw CypherDriver) ReadByAuthority(authority string, identifierValues []str
 		}
 	}
 
-	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{query})
+	err = cd.driver.Read(query)
+	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
+		return Concordances{}, false, nil
+	}
 	if err != nil {
 		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore for authorityValue %v: %w", identifierValues, err)
-	}
-
-	if (len(results)) == 0 {
-		return Concordances{}, false, nil
 	}
 
 	concordances = Concordances{
 		Concordance: []Concordance{},
 	}
 
-	return processCypherQueryToConcordances(pcw, query, results)
+	return processCypherQueryToConcordances(cd, query, results)
 }
 
-func processCypherQueryToConcordances(pcw CypherDriver, q *neoism.CypherQuery, results []neoReadStruct) (concordances Concordances, found bool, err error) {
-	err = pcw.conn.CypherBatch([]*neoism.CypherQuery{q})
+func processCypherQueryToConcordances(cd CypherDriver, q *cmneo4j.Query, results []neoReadStruct) (concordances Concordances, found bool, err error) {
+	err = cd.driver.Read(q)
 	if err != nil {
 		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore: %w", err)
 	}
 
-	concordances = neoReadStructToConcordances(results, pcw.env)
+	concordances = neoReadStructToConcordances(results, cd.env)
 
-	if (len(concordances.Concordance)) == 0 {
+	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
 		return Concordances{}, false, nil
 	}
 	return concordances, true, nil
