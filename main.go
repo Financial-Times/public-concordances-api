@@ -66,6 +66,12 @@ func main() {
 		Desc:   "Log level of the app",
 		EnvVar: "LOG_LEVEL",
 	})
+	dbDriverLogLevel := app.String(cli.StringOpt{
+		Name:   "dbDriverLogLevel",
+		Value:  "WARN",
+		Desc:   "Db's driver logging level (DEBUG, INFO, WARN, ERROR)",
+		EnvVar: "DB_DRIVER_LOG_LEVEL",
+	})
 	apiYml := app.String(cli.StringOpt{
 		Name:   "api-yml",
 		Value:  "./api.yml",
@@ -85,8 +91,8 @@ func main() {
 		if err != nil {
 			log.WithError(err).Fatalf("Application failed to start")
 		}
-
-		driver, err := cmneo4j.NewDefaultDriver(*neoURL, log)
+		dbLog := logger.NewUPPLogger(serviceName+"-cmneo4j-driver", *dbDriverLogLevel)
+		driver, err := cmneo4j.NewDefaultDriver(*neoURL, dbLog)
 		if err != nil {
 			log.WithError(err).Fatal("Unable to create a new cmneo4j driver")
 		}
