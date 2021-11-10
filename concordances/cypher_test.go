@@ -10,6 +10,8 @@ import (
 
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
+	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
+
 	"github.com/Financial-Times/go-logger/v2"
 	"github.com/stretchr/testify/assert"
 )
@@ -298,10 +300,11 @@ var expectedConcordanceNAICSIndustryClassificationByAuthority = Concordances{
 }
 
 func TestNeoReadByConceptID(t *testing.T) {
+	conn := getDatabaseConnection(assert.New(t))
 	driver := getNeoDriver(assert.New(t))
 	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
 
-	conceptRW := concepts.NewConceptService(driver, log)
+	conceptRW := concepts.NewConceptService(conn, log)
 	assert.NoError(t, conceptRW.Initialise())
 
 	tests := []struct {
@@ -372,10 +375,11 @@ func TestNeoReadByConceptID(t *testing.T) {
 }
 
 func TestNeoReadByAuthority(t *testing.T) {
+	conn := getDatabaseConnection(assert.New(t))
 	driver := getNeoDriver(assert.New(t))
 	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
 
-	conceptRW := concepts.NewConceptService(driver, log)
+	conceptRW := concepts.NewConceptService(conn, log)
 	assert.NoError(t, conceptRW.Initialise())
 
 	tests := []struct {
@@ -559,4 +563,17 @@ func cleanUp(assert *assert.Assertions, driver *cmneo4j.Driver) {
 
 	err := driver.Write(queries...)
 	assert.NoError(err)
+}
+
+func getDatabaseConnection(assert *assert.Assertions) neoutils.NeoConnection {
+	url := os.Getenv("NEO4J_TEST_URL")
+	if url == "" {
+		url = "http://localhost:7474/db/data"
+	}
+
+	conf := neoutils.DefaultConnectionConfig()
+	conf.Transactional = false
+	db, err := neoutils.Connect(url, conf, nil)
+	assert.NoError(err, "Failed to connect to Neo4j")
+	return db
 }
