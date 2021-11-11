@@ -84,6 +84,7 @@ func main() {
 		"CACHE_DURATION": *cacheDuration,
 		"NEO_URL":        *neoURL,
 		"LOG_LEVEL":      *logLevel,
+		"PORT":           *port,
 	}).Info("Starting app with arguments")
 
 	app.Action = func() {
