@@ -507,7 +507,7 @@ func sortConcordances(concordanceList []Concordance) {
 }
 
 func getNeoDriver(assert *assert.Assertions) *cmneo4j.Driver {
-	url := os.Getenv("NEO4J_TEST_URL")
+	url := os.Getenv("NEO4J_BOLT_TEST_URL")
 	if url == "" {
 		url = "bolt://localhost:7687"
 	}
