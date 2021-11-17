@@ -74,6 +74,7 @@ func (cd CypherDriver) ReadByConceptID(identifiers []string) (concordances Conco
 	}
 
 	err = cd.driver.Read(query)
+
 	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
 		return Concordances{}, false, nil
 	}
@@ -186,15 +187,16 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 
 func processCypherQueryToConcordances(cd CypherDriver, q *cmneo4j.Query, results []neoReadStruct) (concordances Concordances, found bool, err error) {
 	err = cd.driver.Read(q)
+	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
+		return Concordances{}, false, nil
+	}
+
 	if err != nil {
 		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore: %w", err)
 	}
 
 	concordances = neoReadStructToConcordances(results, cd.env)
 
-	if errors.Is(err, cmneo4j.ErrNoResultsFound) {
-		return Concordances{}, false, nil
-	}
 	return concordances, true, nil
 }
 
