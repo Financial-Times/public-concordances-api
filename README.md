@@ -27,7 +27,7 @@ To run the integration tests, you must provide `GITHUB_USERNAME` and
 ```shell
 GITHUB_USERNAME="<user-name>" GITHUB_TOKEN="<personal-access-token>" \
 docker-compose -f docker-compose-tests.yml up -d --build && \
-docker logs -f public-concordances-api_test-runner_1 && \
+docker logs -f test-runner && \
 docker-compose -f docker-compose-tests.yml down
 ```
 
