@@ -1,18 +1,21 @@
+//go:build integration
+// +build integration
+
 package concordances
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
+	"sort"
 	"testing"
 
-	"reflect"
-
-	"sort"
-
+	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
 	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
 	"github.com/Financial-Times/neo-utils-go/v2/neoutils"
-	"github.com/jmcvetta/neoism"
+
+	"github.com/Financial-Times/go-logger/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -300,8 +303,11 @@ var expectedConcordanceNAICSIndustryClassificationByAuthority = Concordances{
 }
 
 func TestNeoReadByConceptID(t *testing.T) {
-	db := getDatabaseConnection(t, assert.New(t))
-	conceptRW := concepts.NewConceptService(db)
+	conn := getDatabaseConnection(assert.New(t))
+	driver := getNeoDriver(assert.New(t))
+	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
+
+	conceptRW := concepts.NewConceptService(conn, log)
 	assert.NoError(t, conceptRW.Initialise())
 
 	tests := []struct {
@@ -358,9 +364,9 @@ func TestNeoReadByConceptID(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
-			defer cleanUp(assert.New(t), db)
+			defer cleanUp(assert.New(t), driver)
 
-			undertest := NewCypherDriver(db, "prod")
+			undertest := NewCypherDriver(driver, "prod")
 			conc, found, err := undertest.ReadByConceptID(test.conceptIDs)
 			assert.NoError(t, err)
 			assert.True(t, found)
@@ -372,8 +378,11 @@ func TestNeoReadByConceptID(t *testing.T) {
 }
 
 func TestNeoReadByAuthority(t *testing.T) {
-	db := getDatabaseConnection(t, assert.New(t))
-	conceptRW := concepts.NewConceptService(db)
+	conn := getDatabaseConnection(assert.New(t))
+	driver := getNeoDriver(assert.New(t))
+	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
+
+	conceptRW := concepts.NewConceptService(conn, log)
 	assert.NoError(t, conceptRW.Initialise())
 
 	tests := []struct {
@@ -458,9 +467,9 @@ func TestNeoReadByAuthority(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
-			defer cleanUp(assert.New(t), db)
+			defer cleanUp(assert.New(t), driver)
 
-			undertest := NewCypherDriver(db, "prod")
+			undertest := NewCypherDriver(driver, "prod")
 			conc, found, err := undertest.ReadByAuthority(test.authority, test.identifierValues)
 			assert.NoError(t, err)
 
@@ -497,17 +506,15 @@ func sortConcordances(concordanceList []Concordance) {
 	})
 }
 
-func getDatabaseConnection(t *testing.T, assert *assert.Assertions) neoutils.NeoConnection {
-	url := os.Getenv("NEO4J_TEST_URL")
+func getNeoDriver(assert *assert.Assertions) *cmneo4j.Driver {
+	url := os.Getenv("NEO4J_BOLT_TEST_URL")
 	if url == "" {
-		url = "http://localhost:7474/db/data"
+		url = "bolt://localhost:7687"
 	}
-
-	conf := neoutils.DefaultConnectionConfig()
-	conf.Transactional = false
-	db, err := neoutils.Connect(url, conf, nil)
+	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
+	driver, err := cmneo4j.NewDefaultDriver(url, log)
 	assert.NoError(err, "Failed to connect to Neo4j")
-	return db
+	return driver
 }
 
 func writeGenericConceptJSONToService(service concepts.ConceptService, pathToJSONFile string, assert *assert.Assertions) {
@@ -520,8 +527,8 @@ func writeGenericConceptJSONToService(service concepts.ConceptService, pathToJSO
 	assert.NoError(errrr)
 }
 
-func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
-	queries := []*neoism.CypherQuery{}
+func cleanUp(assert *assert.Assertions, driver *cmneo4j.Driver) {
+	var queries []*cmneo4j.Query
 
 	// Concepts with canonical nodes
 	uuids := []string{
@@ -532,12 +539,12 @@ func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
 		"38ee195d-ebdd-48a9-af4b-c8a322e7b04d",
 	}
 	for _, uuid := range uuids {
-		query := &neoism.CypherQuery{
-			Statement: `
-				MATCH (canonical:Concept{prefUUID:{uuid}})--(source)
+		query := &cmneo4j.Query{
+			Cypher: `
+				MATCH (canonical:Concept{prefUUID:$uuid})--(source)
 				OPTIONAL MATCH (source)<-[:IDENTIFIES]-(identifier)
 				DETACH DELETE canonical, source, identifier`,
-			Parameters: neoism.Props{"uuid": uuid},
+			Params: map[string]interface{}{"uuid": uuid},
 		}
 		queries = append(queries, query)
 	}
@@ -547,16 +554,29 @@ func cleanUp(assert *assert.Assertions, db neoutils.NeoConnection) {
 		"dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54",
 	}
 	for _, uuid := range uuids {
-		query := &neoism.CypherQuery{
-			Statement: `
-				MATCH (source:Thing{uuid:{uuid}})
+		query := &cmneo4j.Query{
+			Cypher: `
+				MATCH (source:Thing{uuid:$uuid})
 				OPTIONAL MATCH (source)<-[:IDENTIFIES]-(identifier)
 				DETACH DELETE source, identifier`,
-			Parameters: neoism.Props{"uuid": uuid},
+			Params: map[string]interface{}{"uuid": uuid},
 		}
 		queries = append(queries, query)
 	}
 
-	err := db.CypherBatch(queries)
+	err := driver.Write(queries...)
 	assert.NoError(err)
+}
+
+func getDatabaseConnection(assert *assert.Assertions) neoutils.NeoConnection {
+	url := os.Getenv("NEO4J_TEST_URL")
+	if url == "" {
+		url = "http://localhost:7474/db/data"
+	}
+
+	conf := neoutils.DefaultConnectionConfig()
+	conf.Transactional = false
+	db, err := neoutils.Connect(url, conf, nil)
+	assert.NoError(err, "Failed to connect to Neo4j")
+	return db
 }

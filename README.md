@@ -15,9 +15,19 @@ go build -mod=readonly .
 
 ## Running the tests
 
+Run unit tests only:
+
+```shell script
+go test -v -race ./...
+```
+
+To run the integration tests, you must provide `GITHUB_USERNAME` and
+`GITHUB_TOKEN` because the service depends on internal repositories:
+
 ```shell
+GITHUB_USERNAME="<user-name>" GITHUB_TOKEN="<personal-access-token>" \
 docker-compose -f docker-compose-tests.yml up -d --build && \
-docker logs -f public-concordances-api_test-runner_1 && \
+docker logs -f test-runner && \
 docker-compose -f docker-compose-tests.yml down
 ```
 
