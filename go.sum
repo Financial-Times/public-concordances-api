@@ -1,7 +1,7 @@
 github.com/Financial-Times/api-endpoint v1.0.0 h1:EhJfcVcrktPrweue6dCUQAYcEQiXwh+1byIc8a1nypE=
 github.com/Financial-Times/api-endpoint v1.0.0/go.mod h1:QrJsxP8uEZIPJZon+qhc+zO7H0634DpoqDI291i0Nag=
-github.com/Financial-Times/cm-neo4j-driver v0.0.1 h1:AFD0V2LNHJaxhs2kNVc3BDRwnY6uv0hdyWbYk2eONZ0=
-github.com/Financial-Times/cm-neo4j-driver v0.0.1/go.mod h1:0q7rpnzwBxptooh2/cqd9xALfgNEgVF6JLEzw0ygIDQ=
+github.com/Financial-Times/cm-neo4j-driver v0.1.1-rc1 h1:9QjauLSTOS/vpGm+mrlXVCsN7NZDPhmwj9XJHgkDqr0=
+github.com/Financial-Times/cm-neo4j-driver v0.1.1-rc1/go.mod h1:0q7rpnzwBxptooh2/cqd9xALfgNEgVF6JLEzw0ygIDQ=
 github.com/Financial-Times/concepts-rw-neo4j v1.31.2 h1:uGfQ7jCRKvZuRWCrS/4hZBe9ijfUn4P0u1FRAkN27hI=
 github.com/Financial-Times/concepts-rw-neo4j v1.31.2/go.mod h1:U9dDm5wp/QSGvhoJK4iYsJQUJQAcrr+9lbmktgc+w7k=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
