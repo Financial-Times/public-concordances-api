@@ -10,7 +10,6 @@ workflows:
           name: build-and-test-project
           executor-name:
             name: ft-golang-ci/default-with-neo4j
-            neo4j-image-version: 3.5.28-enterprise
           context:
             - cm-team-github
             - dockerhub-shared
