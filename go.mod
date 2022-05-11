@@ -4,8 +4,8 @@ go 1.17
 
 require (
 	github.com/Financial-Times/api-endpoint v1.0.0
-	github.com/Financial-Times/cm-neo4j-driver v0.1.1
-	github.com/Financial-Times/concepts-rw-neo4j v1.31.5
+	github.com/Financial-Times/cm-neo4j-driver v1.1.0
+	github.com/Financial-Times/concepts-rw-neo4j v1.34.0
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger/v2 v2.0.1
 	github.com/Financial-Times/http-handlers-go/v2 v2.3.0
@@ -18,10 +18,11 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/sirupsen/logrus v1.4.1 // indirect
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.1
 )
 
 require (
+	github.com/Financial-Times/cm-graph-ontology v0.0.1 // indirect
 	github.com/Financial-Times/up-rw-app-api-go v0.0.0-20170710125828-d9d93a1f6895 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.2.0 // indirect
