@@ -12,6 +12,8 @@ github.com/Financial-Times/concepts-rw-neo4j v0.0.0-20221122104052-06a3554173f4 
 github.com/Financial-Times/concepts-rw-neo4j v0.0.0-20221122104052-06a3554173f4/go.mod h1:QUbERXUYVCcVlc1SSXVAeMJ7WYY4b4mjzBIWFCmxxYs=
 github.com/Financial-Times/concepts-rw-neo4j v1.34.0 h1:v+hibGNaK+O5MAafQCvtvB9ebuDaf7wEMNCFqC67n5w=
 github.com/Financial-Times/concepts-rw-neo4j v1.34.0/go.mod h1:5m1WkNN285ydOBqXyl3QzZXs/lOvjqYAyW7bY0Xk/aI=
+github.com/Financial-Times/concepts-rw-neo4j v1.35.6 h1:To7jnWcOj+66cBClbVBWI2d84VksLi4Si9uxcoExwfk=
+github.com/Financial-Times/concepts-rw-neo4j v1.35.6/go.mod h1:QUbERXUYVCcVlc1SSXVAeMJ7WYY4b4mjzBIWFCmxxYs=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7/go.mod h1:gpAzq6W5rCheYlY32JOIxS/VjVcYHbC2PkMzQngHT9c=
 github.com/Financial-Times/go-logger/v2 v2.0.1 h1:iekEfSsUtlkg+YkXTZo+/fIN2VbZ2/3Hl9yolP3z5X8=
