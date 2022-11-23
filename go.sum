@@ -2,8 +2,14 @@ github.com/Financial-Times/api-endpoint v1.0.0 h1:EhJfcVcrktPrweue6dCUQAYcEQiXwh
 github.com/Financial-Times/api-endpoint v1.0.0/go.mod h1:QrJsxP8uEZIPJZon+qhc+zO7H0634DpoqDI291i0Nag=
 github.com/Financial-Times/cm-graph-ontology v0.0.1 h1:11J8a0+QOe1SfbCnDvLQT2R75qUz4XmGQuOGQbDJt4A=
 github.com/Financial-Times/cm-graph-ontology v0.0.1/go.mod h1:h/8ojXW//7avrChq3Tk+TcHpNmBhL59YQMvS8T0tvd4=
+github.com/Financial-Times/cm-graph-ontology v1.1.1 h1:U5QAFzeuV/DQD5CN+EHrBaD1Nvu2fjRzav0/9kgWnpY=
+github.com/Financial-Times/cm-graph-ontology v1.1.1/go.mod h1:Bku34350G+ZZh31w5lDAXlzLJH4Sc5ZmWyiQdp9PlHo=
 github.com/Financial-Times/cm-neo4j-driver v1.1.0 h1:9TZgyE7Vl8iuH0MRQlrVLkjzLFwIQsCn/td806WU7A8=
 github.com/Financial-Times/cm-neo4j-driver v1.1.0/go.mod h1:fQ77C8A+6I+ihwe6Ob8Y7sIzU3s/DTrjBZJGVQOeum0=
+github.com/Financial-Times/cm-neo4j-driver v1.1.1 h1:kmgRa3boe58+tzNTbWTBx3IQnIZt5Hh57Yc2kHy85FM=
+github.com/Financial-Times/cm-neo4j-driver v1.1.1/go.mod h1:fQ77C8A+6I+ihwe6Ob8Y7sIzU3s/DTrjBZJGVQOeum0=
+github.com/Financial-Times/concepts-rw-neo4j v0.0.0-20221122104052-06a3554173f4 h1:Y57ROG4a8zUFTHsykVJq7lQRgkbeWmpefPuJ86N1N2U=
+github.com/Financial-Times/concepts-rw-neo4j v0.0.0-20221122104052-06a3554173f4/go.mod h1:QUbERXUYVCcVlc1SSXVAeMJ7WYY4b4mjzBIWFCmxxYs=
 github.com/Financial-Times/concepts-rw-neo4j v1.34.0 h1:v+hibGNaK+O5MAafQCvtvB9ebuDaf7wEMNCFqC67n5w=
 github.com/Financial-Times/concepts-rw-neo4j v1.34.0/go.mod h1:5m1WkNN285ydOBqXyl3QzZXs/lOvjqYAyW7bY0Xk/aI=
 github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7 h1:dkf1EOTiHXA2lG2EJuePEim6y0HEOPt0hcqsT/qUr/k=
@@ -14,6 +20,8 @@ github.com/Financial-Times/http-handlers-go/v2 v2.3.0 h1:/DqRBffuPpnKsFC+DcXSdXl
 github.com/Financial-Times/http-handlers-go/v2 v2.3.0/go.mod h1:Tgkc7TqJXl/NFxB8eP8CX7YU5X01gbrL55LqNzo4YVY=
 github.com/Financial-Times/neo-model-utils-go v1.0.0 h1:0iTxDtXKkJ9vYQDE73KM/+ghtFLdq0U6bQPdiwaSEaQ=
 github.com/Financial-Times/neo-model-utils-go v1.0.0/go.mod h1:D5ny/A+002uCPCZbtP/E+qpY3//gYJzHw6sqqBUm2Lc=
+github.com/Financial-Times/neo-model-utils-go v1.1.1 h1:couVMV7KahWcGl7cUxMYhOD9wX+J8ld7Tcrp3VvB5d0=
+github.com/Financial-Times/neo-model-utils-go v1.1.1/go.mod h1:D5ny/A+002uCPCZbtP/E+qpY3//gYJzHw6sqqBUm2Lc=
 github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d h1:USNBTIof6vWGM49SYrxvC5Y8NqyDL3YuuYmID81ORZQ=
 github.com/Financial-Times/service-status-go v0.0.0-20160323111542-3f5199736a3d/go.mod h1:7zULC9rrq6KxFkpB3Y5zNVaEwrf1g2m3dvXJBPDXyvM=
 github.com/Financial-Times/transactionid-utils-go v0.2.0 h1:YcET5Hd1fUGWWpQSVszYUlAc15ca8tmjRetUuQKRqEQ=
@@ -44,6 +52,8 @@ github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.7 h1:81/ik6ipDQS2aGcBfIN5dHDB36BwrStyeAQquSYCV4o=
 github.com/google/go-cmp v0.5.7/go.mod h1:n+brtR0CgQNWTVd5ZUFpTBC8YFBDLK/h/bpaJ8/DtOE=
+github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/gorilla/context v1.1.1/go.mod h1:kBGZzfjB9CEq2AlWe17Uuf7NDRt0dE0s8S51q0aT7Yg=
 github.com/gorilla/handlers v1.4.0 h1:XulKRWSQK5uChr4pEgSE4Tc/OcmnU9GJuSwdog/tZsA=
 github.com/gorilla/handlers v1.4.0/go.mod h1:Qkdc/uu4tH4g6mTK6auzZ766c4CA0Ng8+o/OAirnOIQ=

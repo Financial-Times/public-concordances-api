@@ -1,0 +1,22 @@
+{
+  "prefUUID": "97b56e0e-3526-4434-ad29-349b06ead4a3",
+  "type": "FTAnIIndustryClassification",
+  "prefLabel": "Electrical/Electronic Manufacturing",
+  "aliases": [
+    "Electrical/Electronic Manufacturing"
+  ],
+  "industryIdentifier": "ELE",
+  "sourceRepresentations": [
+    {
+      "uuid": "97b56e0e-3526-4434-ad29-349b06ead4a3",
+      "type": "FTAnIIndustryClassification",
+      "prefLabel": "Electrical/Electronic Manufacturing",
+      "aliases": [
+        "Electrical/Electronic Manufacturing"
+      ],
+      "authority": "Smartlogic",
+      "authorityValue": "97b56e0e-3526-4434-ad29-349b06ead4a3",
+      "industryIdentifier": "ELE"
+    }
+  ]
+}
