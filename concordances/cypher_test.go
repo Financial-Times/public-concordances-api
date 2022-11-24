@@ -357,6 +357,40 @@ func TestNeoReadByConceptID(t *testing.T) {
 			expectedLen: 3,
 			expected:    expectedConcordanceNAICSIndustryClassification,
 		},
+		{
+			name:        "FTAnIIndustryClassification",
+			fixture:     "FTAnIIndustryClassification-97b56e0e-3526-4434-ad29-349b06ead4a3.json",
+			conceptIDs:  []string{"97b56e0e-3526-4434-ad29-349b06ead4a3"},
+			expectedLen: 3,
+			expected: Concordances{
+				[]Concordance{
+					{
+						Concept{
+							ID:     "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3",
+							APIURL: "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3"},
+						Identifier{
+							Authority:       "http://api.ft.com/system/SMARTLOGIC",
+							IdentifierValue: "97b56e0e-3526-4434-ad29-349b06ead4a3"},
+					},
+					{
+						Concept{
+							ID:     "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3",
+							APIURL: "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3"},
+						Identifier{
+							Authority:       "http://api.ft.com/system/FT-AnI",
+							IdentifierValue: "ELE"},
+					},
+					{
+						Concept{
+							ID:     "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3",
+							APIURL: "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3"},
+						Identifier{
+							Authority:       "http://api.ft.com/system/UPP",
+							IdentifierValue: "97b56e0e-3526-4434-ad29-349b06ead4a3"},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -452,6 +486,24 @@ func TestNeoReadByAuthority(t *testing.T) {
 			authority:        "http://api.ft.com/system/NAICS",
 			identifierValues: []string{"5111"},
 			expected:         expectedConcordanceNAICSIndustryClassificationByAuthority,
+		},
+		{
+			name:             "FTAnIIndustryClassification",
+			fixture:          "FTAnIIndustryClassification-97b56e0e-3526-4434-ad29-349b06ead4a3.json",
+			authority:        "http://api.ft.com/system/FT-AnI",
+			identifierValues: []string{"ELE"},
+			expected: Concordances{
+				[]Concordance{
+					{
+						Concept{
+							ID:     "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3",
+							APIURL: "http://api.ft.com/things/97b56e0e-3526-4434-ad29-349b06ead4a3"},
+						Identifier{
+							Authority:       "http://api.ft.com/system/FT-AnI",
+							IdentifierValue: "ELE"},
+					},
+				},
+			},
 		},
 		{
 			name:             "EmptyConcordancesWhenUnsupportedAuthority",

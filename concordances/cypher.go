@@ -21,7 +21,7 @@ type CypherDriver struct {
 	env    string
 }
 
-//NewCypherDriver instantiate driver
+// NewCypherDriver instantiate driver
 func NewCypherDriver(driver *cmneo4j.Driver, env string) CypherDriver {
 	return CypherDriver{driver, env}
 }
@@ -61,6 +61,13 @@ func (cd CypherDriver) ReadByConceptID(identifiers []string) (concordances Conco
 		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
 		WHERE exists(canonical.industryIdentifier)
 		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'NAICS' as authority, canonical.industryIdentifier as authorityValue
+		UNION ALL
+
+		MATCH (p:FTAnIIndustryClassification)
+		WHERE p.uuid in $identifiers
+		MATCH (p)-[:EQUIVALENT_TO]->(canonical:Concept)
+		WHERE exists(canonical.industryIdentifier)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, 'FTAnI' as authority, canonical.industryIdentifier as authorityValue
 		UNION ALL
 
 		MATCH (p:Thing)
@@ -154,6 +161,19 @@ func (cd CypherDriver) ReadByAuthority(authority string, identifierValues []stri
 			},
 			Result: &results,
 		}
+	} else if authorityProperty == "FTAnI" {
+		query = &cmneo4j.Query{
+			Cypher: `
+		MATCH (canonical:FTAnIIndustryClassification)
+		WHERE canonical.industryIdentifier IN $authorityValue
+		AND exists(canonical.prefUUID)
+		RETURN DISTINCT canonical.prefUUID AS canonicalUUID, labels(canonical) AS types, canonical.uuid as UUID, 'FTAnI' as authority, canonical.industryIdentifier as authorityValue
+			`,
+			Params: map[string]interface{}{
+				"authorityValue": identifierValues,
+			},
+			Result: &results,
+		}
 	} else {
 		query = &cmneo4j.Query{
 			Cypher: `
@@ -235,6 +255,7 @@ var authorityMap = map[string]string{
 	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
 	"DBPedia":         "http://api.ft.com/system/DBPEDIA",
 	"NAICS":           "http://api.ft.com/system/NAICS",
+	"FTAnI":           "http://api.ft.com/system/FT-AnI",
 }
 
 func AuthorityFromURI(uri string) (string, bool) {
