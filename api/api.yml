@@ -51,6 +51,7 @@ paths:
                 - http://api.ft.com/system/WIKIDATA
                 - http://api.ft.com/system/DBPEDIA
                 - http://api.ft.com/system/NAICS
+                - http://api.ft.com/system/FT-AnI
           examples: 
             TME:
               value: http://api.ft.com/system/FT-TME
@@ -58,6 +59,9 @@ paths:
             NAICS:
               value: http://api.ft.com/system/NAICS
               summary: NAICS authority
+            FT-AnI:
+              value: http://api.ft.com/system/FT-AnI
+              summary: FT Access & Identity industries
         - name: identifierValue
           in: query
           required: false
@@ -72,6 +76,9 @@ paths:
             NAICS:
               value: [5111]
               summary: NAICS identifier
+            FT-AnI:
+              value: [ RES ]
+              summary: A&I industry identifier
       responses:
         "200":
           description: Returns the concordances if they exists.
