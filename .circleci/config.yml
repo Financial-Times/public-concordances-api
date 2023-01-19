@@ -17,7 +17,9 @@ workflows:
           name: build-docker-image
           requires:
             - build-and-test-project
-          context: dockerhub-shared
+          context: 
+            - dockerhub-shared
+            - cm-team-github
   snyk-scanning:
     jobs:
       - ft-golang-ci/scan:
