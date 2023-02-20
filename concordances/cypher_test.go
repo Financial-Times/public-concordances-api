@@ -398,7 +398,8 @@ func TestNeoReadByConceptID(t *testing.T) {
 			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
 			defer cleanUp(assert.New(t), driver)
 
-			undertest := NewCypherDriver(driver, "prod")
+			undertest, err := NewCypherDriver(driver, "http://api.ft.com")
+			assert.NoError(t, err)
 			conc, found, err := undertest.ReadByConceptID(test.conceptIDs)
 			assert.NoError(t, err)
 			assert.True(t, found)
@@ -518,7 +519,8 @@ func TestNeoReadByAuthority(t *testing.T) {
 			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
 			defer cleanUp(assert.New(t), driver)
 
-			undertest := NewCypherDriver(driver, "prod")
+			undertest, err := NewCypherDriver(driver, "http://api.ft.com")
+			assert.NoError(t, err)
 			conc, found, err := undertest.ReadByAuthority(test.authority, test.identifierValues)
 			assert.NoError(t, err)
 

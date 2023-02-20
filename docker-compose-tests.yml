@@ -12,7 +12,7 @@ services:
       - NEO4J_TEST_URL=bolt://neo4j:7687
     command: ["go", "test", "-mod=readonly", "-race", "-tags=integration", "-v", "./..."]
   neo4j:
-    image: neo4j:4.3.10-enterprise
+    image: neo4j:4.4-enterprise
     environment:
       NEO4J_AUTH: "none"
       NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"

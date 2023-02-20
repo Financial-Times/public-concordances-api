@@ -3,10 +3,13 @@ package concordances
 import (
 	"errors"
 	"fmt"
+	"net/url"
 
+	ontology "github.com/Financial-Times/cm-graph-ontology"
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
-	"github.com/Financial-Times/neo-model-utils-go/mapper"
 )
+
+const thingURL = "http://api.ft.com/things/"
 
 // Driver interface
 type Driver interface {
@@ -17,13 +20,18 @@ type Driver interface {
 
 // CypherDriver struct
 type CypherDriver struct {
-	driver *cmneo4j.Driver
-	env    string
+	driver       *cmneo4j.Driver
+	publicAPIURL string
 }
 
 // NewCypherDriver instantiate driver
-func NewCypherDriver(driver *cmneo4j.Driver, env string) CypherDriver {
-	return CypherDriver{driver, env}
+func NewCypherDriver(driver *cmneo4j.Driver, publicAPIURL string) (CypherDriver, error) {
+	_, err := url.ParseRequestURI(publicAPIURL)
+	if err != nil {
+		return CypherDriver{}, err
+	}
+
+	return CypherDriver{driver, publicAPIURL}, nil
 }
 
 // CheckConnectivity tests neo4j by running a simple cypher query
@@ -215,21 +223,29 @@ func processCypherQueryToConcordances(cd CypherDriver, q *cmneo4j.Query, results
 		return Concordances{}, false, fmt.Errorf("error accessing Concordance datastore: %w", err)
 	}
 
-	concordances = neoReadStructToConcordances(results, cd.env)
+	concordances, err = neoReadStructToConcordances(results, cd.publicAPIURL)
+	if err != nil {
+		return Concordances{}, false, fmt.Errorf("transforming result from datastore: %w", err)
+	}
 
 	return concordances, true, nil
 }
 
-func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances Concordances) {
-	concordances = Concordances{
+func neoReadStructToConcordances(neo []neoReadStruct, baseURL string) (Concordances, error) {
+	concordances := Concordances{
 		Concordance: []Concordance{},
 	}
 	for _, neoCon := range neo {
 		var con = Concordance{}
 		var concept = Concept{}
 
-		concept.ID = mapper.IDURL(neoCon.CanonicalUUID)
-		concept.APIURL = mapper.APIURL(neoCon.CanonicalUUID, neoCon.Types, env)
+		apiURL, err := ontology.APIURL(neoCon.CanonicalUUID, neoCon.Types, baseURL)
+		if err != nil {
+			return Concordances{}, fmt.Errorf("building APIURL for %q: %w", neoCon.CanonicalUUID, err)
+		}
+
+		concept.ID = thingIDURL(neoCon.CanonicalUUID)
+		concept.APIURL = apiURL
 		authorityURI, found := AuthorityToURI(neoCon.Authority)
 		if !found {
 			continue
@@ -239,7 +255,7 @@ func neoReadStructToConcordances(neo []neoReadStruct, env string) (concordances 
 		con.Concept = concept
 		concordances.Concordance = append(concordances.Concordance, con)
 	}
-	return concordances
+	return concordances, nil
 }
 
 // Map of authority to URI for the supported concordance IDs
@@ -270,4 +286,8 @@ func AuthorityFromURI(uri string) (string, bool) {
 func AuthorityToURI(authority string) (string, bool) {
 	authorityURI, found := authorityMap[authority]
 	return authorityURI, found
+}
+
+func thingIDURL(uuid string) string {
+	return thingURL + uuid
 }

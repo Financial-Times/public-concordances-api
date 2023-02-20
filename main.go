@@ -49,10 +49,11 @@ func main() {
 		Desc:   "Port to listen on",
 		EnvVar: "APP_PORT",
 	})
-	env := app.String(cli.StringOpt{
-		Name:  "env",
-		Value: "local",
-		Desc:  "environment this app is running in",
+	apiURL := app.String(cli.StringOpt{
+		Name:   "publicAPIURL",
+		Value:  "http://api.ft.com",
+		Desc:   "API Gateway URL used when building the thing ID url in the response, in the format scheme://host",
+		EnvVar: "PUBLIC_API_URL",
 	})
 	cacheDuration := app.String(cli.StringOpt{
 		Name:   "cache-duration",
@@ -99,7 +100,11 @@ func main() {
 		}
 		defer driver.Close()
 
-		concordancesDriver := concordances.NewCypherDriver(driver, *env)
+		concordancesDriver, err := concordances.NewCypherDriver(driver, *apiURL)
+		if err != nil {
+			log.WithError(err).Fatal("Creating CypherDriver")
+		}
+
 		hh := concordances.NewHTTPHandler(log, concordancesDriver, cacheControlHeader)
 		router := registerEndpoints(hh, log, apiYml)
 		srv := newHTTPServer(*port, router)
