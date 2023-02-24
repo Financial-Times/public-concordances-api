@@ -27,7 +27,9 @@ paths:
             type: array
             items:
               type: string
-          examples: 
+          examples:
+            Choose example: 
+              value: []
             uri:
               value: [http://api.ft.com/things/8138ca3f-b80d-3ef8-ad59-6a9b6ea5f15e]
               summary: conceptId as URI
@@ -53,6 +55,8 @@ paths:
                 - http://api.ft.com/system/NAICS
                 - http://api.ft.com/system/FT-AnI
           examples: 
+            Choose example: 
+              value: []
             TME:
               value: http://api.ft.com/system/FT-TME
               summary: TME authority
@@ -70,6 +74,8 @@ paths:
             items:
               type: string
           examples: 
+            Choose example: 
+              value: []
             TME:
               value: [ZCDrZXR0bGV0eQ==-UE4=]
               summary: TME identifier
