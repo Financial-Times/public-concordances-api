@@ -42,6 +42,11 @@ spec:
             configMapKeyRef:
               name: global-config
               key: neo4j.cluster.bolt.url
+        - name: PUBLIC_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
+              key: api.host.with.protocol.insecure
         ports:
         - containerPort: {{ .Values.env.app.port }}
         livenessProbe:
