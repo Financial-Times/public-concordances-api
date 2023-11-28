@@ -11,9 +11,9 @@ import (
 	"sort"
 	"testing"
 
+	ontology "github.com/Financial-Times/cm-graph-ontology/v2"
+	"github.com/Financial-Times/cm-graph-ontology/v2/neo4j"
 	cmneo4j "github.com/Financial-Times/cm-neo4j-driver"
-	"github.com/Financial-Times/concepts-rw-neo4j/concepts"
-
 	"github.com/Financial-Times/go-logger/v2"
 	"github.com/stretchr/testify/assert"
 )
@@ -303,10 +303,6 @@ var expectedConcordanceNAICSIndustryClassificationByAuthority = Concordances{
 
 func TestNeoReadByConceptID(t *testing.T) {
 	driver := getNeoDriver(assert.New(t))
-	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
-
-	conceptRW := concepts.NewConceptService(driver, log)
-	assert.NoError(t, conceptRW.Initialise())
 
 	tests := []struct {
 		name        string
@@ -395,7 +391,7 @@ func TestNeoReadByConceptID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
+			writeConceptFixture(t, driver, "./fixtures/"+test.fixture)
 			defer cleanUp(assert.New(t), driver)
 
 			undertest, err := NewCypherDriver(driver, "http://api.ft.com")
@@ -412,10 +408,6 @@ func TestNeoReadByConceptID(t *testing.T) {
 
 func TestNeoReadByAuthority(t *testing.T) {
 	driver := getNeoDriver(assert.New(t))
-	log := logger.NewUPPLogger("public-concordances-api-test", "PANIC")
-
-	conceptRW := concepts.NewConceptService(driver, log)
-	assert.NoError(t, conceptRW.Initialise())
 
 	tests := []struct {
 		name             string
@@ -516,7 +508,7 @@ func TestNeoReadByAuthority(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			writeGenericConceptJSONToService(conceptRW, "./fixtures/"+test.fixture, assert.New(t))
+			writeConceptFixture(t, driver, "./fixtures/"+test.fixture)
 			defer cleanUp(assert.New(t), driver)
 
 			undertest, err := NewCypherDriver(driver, "http://api.ft.com")
@@ -568,14 +560,24 @@ func getNeoDriver(assert *assert.Assertions) *cmneo4j.Driver {
 	return driver
 }
 
-func writeGenericConceptJSONToService(service concepts.ConceptService, pathToJSONFile string, assert *assert.Assertions) {
-	f, err := os.Open(pathToJSONFile)
-	assert.NoError(err)
-	dec := json.NewDecoder(f)
-	inst, _, errr := service.DecodeJSON(dec)
-	assert.NoError(errr)
-	_, errrr := service.Write(inst, "test_transaction_id")
-	assert.NoError(errrr)
+func writeConceptFixture(t *testing.T, driver *cmneo4j.Driver, fixture string) {
+	f, err := os.Open(fixture)
+	if err != nil {
+		t.Fatalf("failed to open file '%s': %v", fixture, err)
+	}
+	concept := ontology.CanonicalConcept{}
+	err = json.NewDecoder(f).Decode(&concept)
+	if err != nil {
+		t.Fatalf("failed to read concept data from '%s': %v", fixture, err)
+	}
+	query, err := neo4j.WriteCanonicalConceptQueries(concept)
+	if err != nil {
+		t.Fatalf("failed to construct concept write query for '%s': %v", fixture, err)
+	}
+	err = driver.Write(query...)
+	if err != nil {
+		t.Fatalf("failed to write concept in neo4j for '%s': %v", fixture, err)
+	}
 }
 
 func cleanUp(assert *assert.Assertions, driver *cmneo4j.Driver) {
