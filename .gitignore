@@ -10,3 +10,4 @@ Compiled source #
 /public-concordances-api
 
 vendor/*/
+.vscode

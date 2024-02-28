@@ -10,6 +10,7 @@ import (
 )
 
 const thingURL = "http://api.ft.com/things/"
+const systemURL = "http://api.ft.com/system/"
 
 // Driver interface
 type Driver interface {
@@ -29,6 +30,11 @@ func NewCypherDriver(driver *cmneo4j.Driver, publicAPIURL string) (CypherDriver,
 	_, err := url.ParseRequestURI(publicAPIURL)
 	if err != nil {
 		return CypherDriver{}, err
+	}
+
+	conceptTypes := ontology.GetConfig().GetExternalAuthorities()
+	for _, conceptType := range conceptTypes {
+		authorityMap[conceptType] = systemURL + conceptType
 	}
 
 	return CypherDriver{driver, publicAPIURL}, nil
