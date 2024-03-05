@@ -258,24 +258,8 @@ func neoReadStructToConcordances(neo []neoReadStruct, baseURL string) (Concordan
 	return concordances, nil
 }
 
-// Map of authority to URI for the supported concordance IDs
-var authorityMap = map[string]string{
-	"TME":             "http://api.ft.com/system/FT-TME",
-	"FACTSET":         "http://api.ft.com/system/FACTSET",
-	"UPP":             "http://api.ft.com/system/UPP",
-	"LEI":             "http://api.ft.com/system/LEI",
-	"Smartlogic":      "http://api.ft.com/system/SMARTLOGIC",
-	"ManagedLocation": "http://api.ft.com/system/MANAGEDLOCATION",
-	"ISO-3166-1":      "http://api.ft.com/system/ISO-3166-1",
-	"Geonames":        "http://api.ft.com/system/GEONAMES",
-	"Wikidata":        "http://api.ft.com/system/WIKIDATA",
-	"DBPedia":         "http://api.ft.com/system/DBPEDIA",
-	"NAICS":           "http://api.ft.com/system/NAICS",
-	"FTAnI":           "http://api.ft.com/system/FT-AnI",
-}
-
 func AuthorityFromURI(uri string) (string, bool) {
-	for a, u := range authorityMap {
+	for a, u := range ontology.GetConfig().GetAuthoritiesURIMap() {
 		if u == uri {
 			return a, true
 		}
@@ -284,7 +268,7 @@ func AuthorityFromURI(uri string) (string, bool) {
 }
 
 func AuthorityToURI(authority string) (string, bool) {
-	authorityURI, found := authorityMap[authority]
+	authorityURI, found := ontology.GetConfig().GetAuthoritiesURIMap()[authority]
 	return authorityURI, found
 }
 

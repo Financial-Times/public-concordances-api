@@ -301,6 +301,74 @@ var expectedConcordanceNAICSIndustryClassificationByAuthority = Concordances{
 	},
 }
 
+var expectedConcordanceSVProvision = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/1808c3fc-04bb-589b-a457-640bffa8f6c6",
+				APIURL: "http://api.ft.com/concepts/1808c3fc-04bb-589b-a457-640bffa8f6c6"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "1808c3fc-04bb-589b-a457-640bffa8f6c6"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/1808c3fc-04bb-589b-a457-640bffa8f6c6",
+				APIURL: "http://api.ft.com/concepts/1808c3fc-04bb-589b-a457-640bffa8f6c6"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
+				IdentifierValue: "65d735ebad5f88460e919a42"},
+		},
+	},
+}
+
+var expectedConcordanceSVProvisionByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/1808c3fc-04bb-589b-a457-640bffa8f6c6",
+				APIURL: "http://api.ft.com/concepts/1808c3fc-04bb-589b-a457-640bffa8f6c6"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
+				IdentifierValue: "65d735ebad5f88460e919a42"},
+		},
+	},
+}
+
+var expectedConcordanceSVCategory = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/e0fc58d1-8dc5-47c6-90b1-59ccf8217366",
+				APIURL: "http://api.ft.com/things/e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/e0fc58d1-8dc5-47c6-90b1-59ccf8217366",
+				APIURL: "http://api.ft.com/things/e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
+				IdentifierValue: "e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+		},
+	},
+}
+
+var expectedConcordanceSVCategoryByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/e0fc58d1-8dc5-47c6-90b1-59ccf8217366",
+				APIURL: "http://api.ft.com/things/e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
+				IdentifierValue: "e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+		},
+	},
+}
+
 func TestNeoReadByConceptID(t *testing.T) {
 	driver := getNeoDriver(assert.New(t))
 
@@ -352,6 +420,20 @@ func TestNeoReadByConceptID(t *testing.T) {
 			conceptIDs:  []string{"38ee195d-ebdd-48a9-af4b-c8a322e7b04d"},
 			expectedLen: 3,
 			expected:    expectedConcordanceNAICSIndustryClassification,
+		},
+		{
+			name:        "SVProvision",
+			fixture:     "SVProvision-Unconcorded-1808c3fc-04bb-589b-a457-640bffa8f6c6.json",
+			conceptIDs:  []string{"1808c3fc-04bb-589b-a457-640bffa8f6c6"},
+			expectedLen: 2,
+			expected:    expectedConcordanceSVProvision,
+		},
+		{
+			name:        "SVCategory",
+			fixture:     "SVCategory-Unconcorded-e0fc58d1-8dc5-47c6-90b1-59ccf8217366.json",
+			conceptIDs:  []string{"e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+			expectedLen: 2,
+			expected:    expectedConcordanceSVCategory,
 		},
 		{
 			name:        "FTAnIIndustryClassification",
@@ -479,6 +561,20 @@ func TestNeoReadByAuthority(t *testing.T) {
 			authority:        "http://api.ft.com/system/NAICS",
 			identifierValues: []string{"5111"},
 			expected:         expectedConcordanceNAICSIndustryClassificationByAuthority,
+		},
+		{
+			name:             "SVProvision",
+			fixture:          "SVProvision-Unconcorded-1808c3fc-04bb-589b-a457-640bffa8f6c6.json",
+			authority:        "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
+			identifierValues: []string{"65d735ebad5f88460e919a42"},
+			expected:         expectedConcordanceSVProvisionByAuthority,
+		},
+		{
+			name:             "SVCategory",
+			fixture:          "SVCategory-Unconcorded-e0fc58d1-8dc5-47c6-90b1-59ccf8217366.json",
+			authority:        "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
+			identifierValues: []string{"e0fc58d1-8dc5-47c6-90b1-59ccf8217366"},
+			expected:         expectedConcordanceSVCategoryByAuthority,
 		},
 		{
 			name:             "FTAnIIndustryClassification",

@@ -1,0 +1,17 @@
+{
+    "aliases": [
+        "Policy and Regulation"
+    ],
+    "prefLabel": "Policy and Regulation",
+    "prefUUID": "e0fc58d1-8dc5-47c6-90b1-59ccf8217366",
+    "sourceRepresentations": [
+        {
+            "authority": "8e6c705e-1132-42a2-8db0-c295e29e8658",
+            "authorityValue": "e0fc58d1-8dc5-47c6-90b1-59ccf8217366",
+            "prefLabel": "Policy and Regulation",
+            "type": "SVCategory",
+            "uuid": "e0fc58d1-8dc5-47c6-90b1-59ccf8217366"
+        }
+    ],
+    "type": "SVCategory"
+}
