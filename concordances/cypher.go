@@ -259,7 +259,7 @@ func neoReadStructToConcordances(neo []neoReadStruct, baseURL string) (Concordan
 }
 
 func AuthorityFromURI(uri string) (string, bool) {
-	for a, u := range ontology.GetConfig().GetAuthoritiesURIMap() {
+	for a, u := range ontology.GetConfig().GetSystemsURIMap() {
 		if u == uri {
 			return a, true
 		}
@@ -268,7 +268,7 @@ func AuthorityFromURI(uri string) (string, bool) {
 }
 
 func AuthorityToURI(authority string) (string, bool) {
-	authorityURI, found := ontology.GetConfig().GetAuthoritiesURIMap()[authority]
+	authorityURI, found := ontology.GetConfig().GetSystemsURIMap()[authority]
 	return authorityURI, found
 }
 
