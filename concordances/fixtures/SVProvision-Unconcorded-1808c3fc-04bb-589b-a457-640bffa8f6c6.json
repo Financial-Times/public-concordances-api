@@ -11,11 +11,11 @@
             "authorityValue": "65d735ebad5f88460e919a42",
             "prefLabel": "ht",
             "publishedDate": "2024-02-28T12:00:00.000Z",
-            "sourceURL": "https://www.fsa.go.jp/news/r4/singi/20221215/02.pdf",
+            "sourceURL": ["https://www.fsa.go.jp/news/r4/singi/20221215/02.pdf"],
             "type": "SVProvision",
             "uuid": "1808c3fc-04bb-589b-a457-640bffa8f6c6"
         }
     ],
-    "sourceURL": "https://www.fsa.go.jp/news/r4/singi/20221215/02.pdf",
+    "sourceURL": ["https://www.fsa.go.jp/news/r4/singi/20221215/02.pdf"],
     "type": "SVProvision"
 }
