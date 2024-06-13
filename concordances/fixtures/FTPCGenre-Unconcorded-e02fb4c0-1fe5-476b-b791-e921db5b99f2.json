@@ -1,0 +1,19 @@
+{
+    "aliases": [
+        "Test FTPCGenre"
+    ],
+    "prefLabel": "Test FTPCGenre",
+    "prefUUID": "e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+    "publishedDate": "2024-02-28T12:00:00.000Z",
+    "sourceRepresentations": [
+        {
+            "authority": "724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+            "authorityValue": "e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+            "prefLabel": "Test FTPCGenre",
+            "publishedDate": "2024-02-28T12:00:00.000Z",
+            "type": "FTPCGenre",
+            "uuid": "e02fb4c0-1fe5-476b-b791-e921db5b99f2"
+        }
+    ],
+    "type": "FTPCGenre"
+}
