@@ -1,0 +1,19 @@
+{
+    "aliases": [
+        "Test FTPCSource"
+    ],
+    "prefLabel": "Test FTPCSource",
+    "prefUUID": "8a852776-38b4-47fc-bb5e-e496801a28bf",
+    "publishedDate": "2024-02-28T12:00:00.000Z",
+    "sourceRepresentations": [
+        {
+            "authority": "724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+            "authorityValue": "8a852776-38b4-47fc-bb5e-e496801a28bf",
+            "prefLabel": "Test FTPCSource",
+            "publishedDate": "2024-02-28T12:00:00.000Z",
+            "type": "FTPCSource",
+            "uuid": "8a852776-38b4-47fc-bb5e-e496801a28bf"
+        }
+    ],
+    "type": "FTPCSource"
+}

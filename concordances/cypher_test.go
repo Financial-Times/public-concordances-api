@@ -335,6 +335,108 @@ var expectedConcordanceSVProvisionByAuthority = Concordances{
 	},
 }
 
+var expectedConcordanceFTPCGenre = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+				APIURL: "http://api.ft.com/things/e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+				APIURL: "http://api.ft.com/things/e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+				IdentifierValue: "e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+		},
+	},
+}
+
+var expectedConcordanceFTPCGenreByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/e02fb4c0-1fe5-476b-b791-e921db5b99f2",
+				APIURL: "http://api.ft.com/things/e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+				IdentifierValue: "e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+		},
+	},
+}
+
+var expectedConcordanceFTPCSource = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/8a852776-38b4-47fc-bb5e-e496801a28bf",
+				APIURL: "http://api.ft.com/things/8a852776-38b4-47fc-bb5e-e496801a28bf"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "8a852776-38b4-47fc-bb5e-e496801a28bf"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/8a852776-38b4-47fc-bb5e-e496801a28bf",
+				APIURL: "http://api.ft.com/things/8a852776-38b4-47fc-bb5e-e496801a28bf"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+				IdentifierValue: "8a852776-38b4-47fc-bb5e-e496801a28bf"},
+		},
+	},
+}
+
+var expectedConcordanceFTPCSourceByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/8a852776-38b4-47fc-bb5e-e496801a28bf",
+				APIURL: "http://api.ft.com/things/8a852776-38b4-47fc-bb5e-e496801a28bf"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+				IdentifierValue: "8a852776-38b4-47fc-bb5e-e496801a28bf"},
+		},
+	},
+}
+
+var expectedConcordanceFTPCAssetType = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/c5440e5e-a472-4948-ab33-97e0089dd926",
+				APIURL: "http://api.ft.com/things/c5440e5e-a472-4948-ab33-97e0089dd926"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "c5440e5e-a472-4948-ab33-97e0089dd926"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/c5440e5e-a472-4948-ab33-97e0089dd926",
+				APIURL: "http://api.ft.com/things/c5440e5e-a472-4948-ab33-97e0089dd926"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+				IdentifierValue: "c5440e5e-a472-4948-ab33-97e0089dd926"},
+		},
+	},
+}
+
+var expectedConcordanceFTPCAssetTypeByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/c5440e5e-a472-4948-ab33-97e0089dd926",
+				APIURL: "http://api.ft.com/things/c5440e5e-a472-4948-ab33-97e0089dd926"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+				IdentifierValue: "c5440e5e-a472-4948-ab33-97e0089dd926"},
+		},
+	},
+}
+
 var expectedConcordanceSVCategory = Concordances{
 	[]Concordance{
 		{
@@ -427,6 +529,27 @@ func TestNeoReadByConceptID(t *testing.T) {
 			conceptIDs:  []string{"1808c3fc-04bb-589b-a457-640bffa8f6c6"},
 			expectedLen: 2,
 			expected:    expectedConcordanceSVProvision,
+		},
+		{
+			name:        "FTPCSource",
+			fixture:     "FTPCSource-Unconcorded-8a852776-38b4-47fc-bb5e-e496801a28bf.json",
+			conceptIDs:  []string{"8a852776-38b4-47fc-bb5e-e496801a28bf"},
+			expectedLen: 2,
+			expected:    expectedConcordanceFTPCSource,
+		},
+		{
+			name:        "FTPCGenre",
+			fixture:     "FTPCGenre-Unconcorded-e02fb4c0-1fe5-476b-b791-e921db5b99f2.json",
+			conceptIDs:  []string{"e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+			expectedLen: 2,
+			expected:    expectedConcordanceFTPCGenre,
+		},
+		{
+			name:        "FTPCAssetType",
+			fixture:     "FTPCAssetType-Unconcorded-c5440e5e-a472-4948-ab33-97e0089dd926.json",
+			conceptIDs:  []string{"c5440e5e-a472-4948-ab33-97e0089dd926"},
+			expectedLen: 2,
+			expected:    expectedConcordanceFTPCAssetType,
 		},
 		{
 			name:        "SVCategory",
@@ -568,6 +691,27 @@ func TestNeoReadByAuthority(t *testing.T) {
 			authority:        "http://api.ft.com/system/8e6c705e-1132-42a2-8db0-c295e29e8658",
 			identifierValues: []string{"65d735ebad5f88460e919a42"},
 			expected:         expectedConcordanceSVProvisionByAuthority,
+		},
+		{
+			name:             "FTPCSource",
+			fixture:          "FTPCSource-Unconcorded-8a852776-38b4-47fc-bb5e-e496801a28bf.json",
+			authority:        "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+			identifierValues: []string{"8a852776-38b4-47fc-bb5e-e496801a28bf"},
+			expected:         expectedConcordanceFTPCSourceByAuthority,
+		},
+		{
+			name:             "FTPCGenre",
+			fixture:          "FTPCGenre-Unconcorded-e02fb4c0-1fe5-476b-b791-e921db5b99f2.json",
+			authority:        "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+			identifierValues: []string{"e02fb4c0-1fe5-476b-b791-e921db5b99f2"},
+			expected:         expectedConcordanceFTPCGenreByAuthority,
+		},
+		{
+			name:             "FTPCAssetType",
+			fixture:          "FTPCAssetType-Unconcorded-c5440e5e-a472-4948-ab33-97e0089dd926.json",
+			authority:        "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
+			identifierValues: []string{"c5440e5e-a472-4948-ab33-97e0089dd926"},
+			expected:         expectedConcordanceFTPCAssetTypeByAuthority,
 		},
 		{
 			name:             "SVCategory",
