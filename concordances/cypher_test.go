@@ -437,6 +437,74 @@ var expectedConcordanceFTPCAssetTypeByAuthority = Concordances{
 	},
 }
 
+var expectedConcordanceFTAOrganisationDetails = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/77701984-3542-4f77-91aa-b5f7bfa43330",
+				APIURL: "http://api.ft.com/concepts/77701984-3542-4f77-91aa-b5f7bfa43330"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "77701984-3542-4f77-91aa-b5f7bfa43330"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/77701984-3542-4f77-91aa-b5f7bfa43330",
+				APIURL: "http://api.ft.com/concepts/77701984-3542-4f77-91aa-b5f7bfa43330"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
+				IdentifierValue: "77701984-3542-4f77-91aa-b5f7bfa43330"},
+		},
+	},
+}
+
+var expectedConcordanceFTAOrganisationDetailsByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/77701984-3542-4f77-91aa-b5f7bfa43330",
+				APIURL: "http://api.ft.com/concepts/77701984-3542-4f77-91aa-b5f7bfa43330"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
+				IdentifierValue: "77701984-3542-4f77-91aa-b5f7bfa43330"},
+		},
+	},
+}
+
+var expectedConcordanceFTAPersonDetails = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/a671f5a9-b9a4-4836-a174-fc273166f0db",
+				APIURL: "http://api.ft.com/concepts/a671f5a9-b9a4-4836-a174-fc273166f0db"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "a671f5a9-b9a4-4836-a174-fc273166f0db"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/a671f5a9-b9a4-4836-a174-fc273166f0db",
+				APIURL: "http://api.ft.com/concepts/a671f5a9-b9a4-4836-a174-fc273166f0db"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
+				IdentifierValue: "a671f5a9-b9a4-4836-a174-fc273166f0db"},
+		},
+	},
+}
+
+var expectedConcordanceFTAPersonDetailsByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/a671f5a9-b9a4-4836-a174-fc273166f0db",
+				APIURL: "http://api.ft.com/concepts/a671f5a9-b9a4-4836-a174-fc273166f0db"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
+				IdentifierValue: "a671f5a9-b9a4-4836-a174-fc273166f0db"},
+		},
+	},
+}
+
 var expectedConcordanceSVCategory = Concordances{
 	[]Concordance{
 		{
@@ -550,6 +618,20 @@ func TestNeoReadByConceptID(t *testing.T) {
 			conceptIDs:  []string{"c5440e5e-a472-4948-ab33-97e0089dd926"},
 			expectedLen: 2,
 			expected:    expectedConcordanceFTPCAssetType,
+		},
+		{
+			name:        "FTAOrganisationDetails",
+			fixture:     "FTAOrganisationDetails-Unconcorded-77701984-3542-4f77-91aa-b5f7bfa43330.json",
+			conceptIDs:  []string{"77701984-3542-4f77-91aa-b5f7bfa43330"},
+			expectedLen: 2,
+			expected:    expectedConcordanceFTAOrganisationDetails,
+		},
+		{
+			name:        "FTAPersonDetails",
+			fixture:     "FTAPersonDetails-Unconcorded-a671f5a9-b9a4-4836-a174-fc273166f0db.json",
+			conceptIDs:  []string{"a671f5a9-b9a4-4836-a174-fc273166f0db"},
+			expectedLen: 2,
+			expected:    expectedConcordanceFTAPersonDetails,
 		},
 		{
 			name:        "SVCategory",
@@ -712,6 +794,20 @@ func TestNeoReadByAuthority(t *testing.T) {
 			authority:        "http://api.ft.com/system/724b5e36-6d45-4cf1-b1c2-3f676b21f21b",
 			identifierValues: []string{"c5440e5e-a472-4948-ab33-97e0089dd926"},
 			expected:         expectedConcordanceFTPCAssetTypeByAuthority,
+		},
+		{
+			name:             "FTAOrganisationDetails",
+			fixture:          "FTAOrganisationDetails-Unconcorded-77701984-3542-4f77-91aa-b5f7bfa43330.json",
+			authority:        "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
+			identifierValues: []string{"77701984-3542-4f77-91aa-b5f7bfa43330"},
+			expected:         expectedConcordanceFTAOrganisationDetailsByAuthority,
+		},
+		{
+			name:             "FTAPersonDetails",
+			fixture:          "FTAPersonDetails-Unconcorded-a671f5a9-b9a4-4836-a174-fc273166f0db.json",
+			authority:        "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
+			identifierValues: []string{"a671f5a9-b9a4-4836-a174-fc273166f0db"},
+			expected:         expectedConcordanceFTAPersonDetailsByAuthority,
 		},
 		{
 			name:             "SVCategory",
