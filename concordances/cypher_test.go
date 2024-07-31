@@ -539,6 +539,40 @@ var expectedConcordanceSVCategoryByAuthority = Concordances{
 	},
 }
 
+var expectedConcordancePersonGeneric = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/3c4666ef-b403-4313-b648-d639762750e4",
+				APIURL: "http://api.ft.com/people/3c4666ef-b403-4313-b648-d639762750e4"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/UPP",
+				IdentifierValue: "3c4666ef-b403-4313-b648-d639762750e4"},
+		},
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/3c4666ef-b403-4313-b648-d639762750e4",
+				APIURL: "http://api.ft.com/people/3c4666ef-b403-4313-b648-d639762750e4"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/GENERIC",
+				IdentifierValue: "3c4666ef-b403-4313-b648-d639762750e4"},
+		},
+	},
+}
+
+var expectedConcordancePersonGenericByAuthority = Concordances{
+	[]Concordance{
+		{
+			Concept{
+				ID:     "http://api.ft.com/things/3c4666ef-b403-4313-b648-d639762750e4",
+				APIURL: "http://api.ft.com/people/3c4666ef-b403-4313-b648-d639762750e4"},
+			Identifier{
+				Authority:       "http://api.ft.com/system/GENERIC",
+				IdentifierValue: "3c4666ef-b403-4313-b648-d639762750e4"},
+		},
+	},
+}
+
 func TestNeoReadByConceptID(t *testing.T) {
 	driver := getNeoDriver(assert.New(t))
 
@@ -632,6 +666,13 @@ func TestNeoReadByConceptID(t *testing.T) {
 			conceptIDs:  []string{"a671f5a9-b9a4-4836-a174-fc273166f0db"},
 			expectedLen: 2,
 			expected:    expectedConcordanceFTAPersonDetails,
+		},
+		{
+			name:        "PersonGeneric",
+			fixture:     "Person-Generic-3c4666ef-b403-4313-b648-d639762750e4.json",
+			conceptIDs:  []string{"3c4666ef-b403-4313-b648-d639762750e4"},
+			expectedLen: 2,
+			expected:    expectedConcordancePersonGeneric,
 		},
 		{
 			name:        "SVCategory",
@@ -808,6 +849,13 @@ func TestNeoReadByAuthority(t *testing.T) {
 			authority:        "http://api.ft.com/system/19d50190-8656-4e91-8d34-82e646ada9c9",
 			identifierValues: []string{"a671f5a9-b9a4-4836-a174-fc273166f0db"},
 			expected:         expectedConcordanceFTAPersonDetailsByAuthority,
+		},
+		{
+			name:             "PersonGeneric",
+			fixture:          "Person-Generic-3c4666ef-b403-4313-b648-d639762750e4.json",
+			authority:        "http://api.ft.com/system/GENERIC",
+			identifierValues: []string{"3c4666ef-b403-4313-b648-d639762750e4"},
+			expected:         expectedConcordancePersonGenericByAuthority,
 		},
 		{
 			name:             "SVCategory",
